@@ -85,6 +85,15 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 return noiseValue;
             }
 
+            // Update the 0xc0 register for all channels to signal the switch to mono/stereo handlers
+            private void UpdateSynths()
+            {
+                for (var i = 0; i < 18; i++)
+                {
+                    chan[i].UpdateSynth(this);
+                }
+            }
+
             public void WriteReg(uint reg, byte val)
             {
                 switch ((reg & 0xf0) >> 4)
@@ -101,6 +110,8 @@ namespace NScumm.Core.Audio.OPL.DosBox
                                 return;
                             //Always keep the highest bit enabled, for checking > 0x80
                             reg104 = (byte)(0x80 | (val & 0x3f));
+                            //Switch synths when changing the 4op combinations
+                            UpdateSynths();
                         }
                         else if (reg == 0x105)
                         {
@@ -108,11 +119,9 @@ namespace NScumm.Core.Audio.OPL.DosBox
                             if (0 == ((opl3Active ^ val) & 1))
                                 return;
                             opl3Active = (sbyte)(((val & 1) != 0) ? 0xff : 0);
-                            //Update the 0xc0 register for all channels to signal the switch to mono/stereo handlers
-                            for (int i = 0; i < 18; i++)
-                            {
-                                chan[i].ResetC0(this);
-                            }
+                            //Just tupdate the synths now that opl3 most have been enabled
+                            //This isn't how the real card handles it but need to switch to stereo generating handlers
+                            UpdateSynths();
                         }
                         else if (reg == 0x08)
                         {
@@ -283,25 +292,23 @@ namespace NScumm.Core.Audio.OPL.DosBox
                         {
                             bestDiff = lDiff;
                             bestAdd = guessAdd;
+                            //We hit an exactly matching sample count
                             if (bestDiff == 0)
                                 break;
                         }
+                        //Linear correction factor, not exactly perfect but seems to work
+                        double correct = (original - diff) / (double)original;
+                        guessAdd = (int)(guessAdd * correct);
                         //Below our target
                         if (diff < 0)
                         {
-                            //Better than the last time
-                            int mul = ((original - diff) << 12) / original;
-                            guessAdd = ((guessAdd * mul) >> 12);
+                            //Always add one here for rounding, an overshoot will get corrected by another pass decreasing
                             guessAdd++;
-                        }
-                        else if (diff > 0)
-                        {
-                            int mul = ((original - diff) << 12) / original;
-                            guessAdd = (guessAdd * mul) >> 12;
-                            guessAdd--;
                         }
                     }
                     attackRates[i] = (uint)bestAdd;
+                    //Keep track of the diffs for some debugging
+                    //		attackDiffs[i] = bestDiff;
                 }
                 for (byte i = 62; i < 76; i++)
                 {
@@ -470,7 +477,8 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 else if ((change & 0x20) != 0)
                 {
                     //Trigger a reset to setup the original synth handler
-                    chan[6].ResetC0(this);
+                    //This makes it call
+                    chan[6].UpdateSynth(this);
                     chan[6].Ops[0].KeyOff(0x2);
                     chan[6].Ops[1].KeyOff(0x2);
                     chan[7].Ops[0].KeyOff(0x2);

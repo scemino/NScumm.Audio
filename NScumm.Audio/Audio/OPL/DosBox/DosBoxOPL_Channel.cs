@@ -97,7 +97,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 if (change == 0)
                     return;
                 regC0 = val;
-                feedback = (byte)((val >> 1) & 7);
+                feedback = (byte)((regC0 >> 1) & 7);
                 if (feedback != 0)
                 {
                     //We shift the input to the right 10 bit wave index value
@@ -107,6 +107,11 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 {
                     feedback = 31;
                 }
+                UpdateSynth(chip);
+            }
+
+            public void UpdateSynth(Chip chip)
+            {
                 //Select the new synth mode
                 if (chip.Opl3Active != 0)
                 {
@@ -149,7 +154,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
 
                         //Regular dual op, am or fm
                     }
-                    else if ((val & 1) != 0)
+                    else if ((regC0 & 1) != 0)
                     {
                         SynthMode = SynthMode.Sm3AM;
                     }
@@ -157,8 +162,8 @@ namespace NScumm.Core.Audio.OPL.DosBox
                     {
                         SynthMode = SynthMode.Sm3FM;
                     }
-                    maskLeft = (sbyte)((val & 0x10) != 0 ? -1 : 0);
-                    maskRight = (sbyte)((val & 0x20) != 0 ? -1 : 0);
+                    maskLeft = (sbyte)((regC0 & 0x10) != 0 ? -1 : 0);
+                    maskRight = (sbyte)((regC0 & 0x20) != 0 ? -1 : 0);
                     //opl2 active
                 }
                 else
@@ -168,7 +173,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                     {
                         //Regular dual op, am or fm
                     }
-                    else if ((val & 1) != 0)
+                    else if ((regC0 & 1) != 0)
                     {
                         SynthMode = SynthMode.Sm2AM;
                     }
@@ -177,13 +182,6 @@ namespace NScumm.Core.Audio.OPL.DosBox
                         SynthMode = SynthMode.Sm2FM;
                     }
                 }
-            }
-
-            public void ResetC0(Chip chip)
-            {
-                byte val = regC0;
-                regC0 ^= 0xff;
-                WriteC0(chip, val);
             }
 
             public Channel SynthHandler(Chip chip, uint samples, int[] output, int pos)
