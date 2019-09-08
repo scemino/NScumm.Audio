@@ -180,10 +180,10 @@ namespace NScumm.Core.Audio.OPL.DosBox
             public void GenerateBlock2(uint total, int[] output)
             {
                 int pos = 0;
-                Array.Clear(output, 0, output.Length);
                 while (total > 0)
                 {
                     uint samples = ForwardLFO(total);
+                    Array.Clear(output, pos, (int)samples);
                     for (var ch = chan[0]; ch.ChannelNum < 9;)
                     {
                         ch = ch.SynthHandler(this, samples, output, pos);
@@ -199,7 +199,7 @@ namespace NScumm.Core.Audio.OPL.DosBox
                 while (total > 0)
                 {
                     uint samples = ForwardLFO(total);
-                    Array.Clear(output, 0, (int)samples * 2);
+                    Array.Clear(output, pos, (int)samples * 2);
 
                     for (var i = 0; i < 18; i++)
                     {
