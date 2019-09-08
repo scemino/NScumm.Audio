@@ -26,11 +26,12 @@ using NScumm.Core.Audio.OPL;
 
 namespace NScumm.Audio.Player
 {
+
     /// <summary>
     /// DOSBox Raw OPL Player by Sjoerd van der Berg harekiet@zophar.net
     /// This code has been adapted from adplug https://github.com/adplug/adplug
     /// </summary>
-    internal sealed class DroPlayer
+    internal sealed class DroPlayer: IMusicPlayer
     {
         private const byte iCmdDelayS = 0x00;
         private const byte iCmdDelayL = 0x01;

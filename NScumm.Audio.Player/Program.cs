@@ -40,19 +40,26 @@ namespace NScumm.Audio.Player
             var opl = new DosBoxOPL(OplType.Opl2);
             opl.Init(Rate);
 
-            var player = new DroPlayer(opl);
-            if(!player.Load(args[0]))
+            var players = new IMusicPlayer[]
             {
-                Console.Error.WriteLine("This music file is not supported");
-                return -1;
+                new DroPlayer(opl),
+                new ImfPlayer(opl)
+            };
+            foreach (var player in players)
+            {
+                if (!player.Load(args[0]))
+                    continue;
+
+                var alPlayer = new AlPlayer(player, Rate);
+                alPlayer.Play();
+
+                Console.WriteLine("Hit a key to stop!");
+                Console.ReadKey();
+                return 0;
             }
 
-            var alPlayer = new AlPlayer(player, Rate);
-            alPlayer.Play();
-
-            Console.WriteLine("Hit a key to stop!");
-            Console.ReadKey();
-            return 0;
+            Console.Error.WriteLine("This music file is not supported");
+            return -1;
         }
     }
 }

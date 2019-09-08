@@ -31,13 +31,13 @@ namespace NScumm.Audio.Player
         private const int DATA_CHUNK_SIZE = 1024 * 4;
         private const int NUM_BUFFERS = 4;
 
-        private readonly DroPlayer _player;
+        private readonly IMusicPlayer _player;
         private readonly int _rate;
         private readonly IntPtr _device;
         private readonly IntPtr _context;
         private int minicnt;
 
-        public AlPlayer(DroPlayer player, int rate)
+        public AlPlayer(IMusicPlayer player, int rate)
         {
             _player = player;
             _rate = rate;
