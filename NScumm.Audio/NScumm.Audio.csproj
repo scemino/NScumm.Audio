@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+    <PackOnBuild>true</PackOnBuild>
+    <PackageVersion>1.0</PackageVersion>
+    <Authors>scemino</Authors>
+    <PackageLicenseUrl>https://www.gnu.org/licenses/gpl-3.0.en.html</PackageLicenseUrl>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <Owners>scemino</Owners>
+    <PackageProjectUrl>https://github.com/scemino/nscumm.audio</PackageProjectUrl>
+    <Title>NScumm.Audio</Title>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Folder Include="Audio\" />
+  </ItemGroup>
+</Project>
