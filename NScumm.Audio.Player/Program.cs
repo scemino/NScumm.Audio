@@ -43,7 +43,8 @@ namespace NScumm.Audio.Player
             var players = new IMusicPlayer[]
             {
                 new DroPlayer(opl),
-                new ImfPlayer(opl)
+                new ImfPlayer(opl),
+                new SngPlayer(opl)
             };
             foreach (var player in players)
             {
