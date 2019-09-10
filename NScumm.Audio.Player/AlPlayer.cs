@@ -140,7 +140,8 @@ namespace NScumm.Audio.Player
                         // Insert the audio buffer to the source queue
                         Al.SourceQueueBuffers(source[0], 1, uiBuffer);
                     }
-                    else
+                    Al.GetSourcei(source[0], Al.SourceState, out var state);
+                    if (state != Al.Playing)
                     {
                         playing = false;
                     }
@@ -148,6 +149,9 @@ namespace NScumm.Audio.Player
                     iBuffersProcessed--;
                 }
             }
+
+            Console.WriteLine();
+            Console.WriteLine("End!");
 
             Al.SourceStop(source[0]);
             Al.DeleteSources(source.Length, source);

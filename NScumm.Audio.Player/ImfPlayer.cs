@@ -27,7 +27,7 @@ using NScumm.Core.Audio.OPL;
 namespace NScumm.Audio.Player
 {
     /// <summary>
-    /// IMF Player by Simon Peter <dn.tlp@gmx.net>
+    /// IMF Player by Simon Peter dn.tlp@gmx.net
     /// This code has been adapted from adplug https://github.com/adplug/adplug
     /// </summary>
     internal sealed class ImfPlayer: IMusicPlayer
