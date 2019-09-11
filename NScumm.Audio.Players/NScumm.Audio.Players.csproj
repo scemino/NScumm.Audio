@@ -7,4 +7,7 @@
     <Authors>scemino</Authors>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\NScumm.Audio\NScumm.Audio.csproj" />
+  </ItemGroup>
 </Project>

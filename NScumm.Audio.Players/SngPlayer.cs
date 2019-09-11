@@ -23,7 +23,7 @@ using System;
 using System.IO;
 using NScumm.Core.Audio.OPL;
 
-namespace NScumm.Audio.Player
+namespace NScumm.Audio.Players
 {
     /// <summary>
     /// SNG Player by Simon Peter dn.tlp@gmx.net

@@ -22,14 +22,15 @@
 
 using System;
 using System.Threading;
+using NScumm.Audio.Players;
 using OpenAL;
 
-namespace NScumm.Audio.Player
+namespace NScumm.Audio.AlPlayer
 {
     internal sealed class AlPlayer
     {
-        private const int DATA_CHUNK_SIZE = 1024 * 4;
-        private const int NUM_BUFFERS = 4;
+        private const int DataChunckSize = 1024 * 4;
+        private const int NumBuffers = 4;
 
         private readonly IMusicPlayer _player;
         private readonly int _rate;
@@ -63,7 +64,7 @@ namespace NScumm.Audio.Player
         {
             int freq = _rate;
 
-            int i, towrite = DATA_CHUNK_SIZE;
+            int i, towrite = DataChunckSize;
             var pos = 0;
 
             while (towrite > 0)
@@ -82,7 +83,7 @@ namespace NScumm.Audio.Player
                 minicnt -= (int)(_player.RefreshRate * i);
             }
 
-            return DATA_CHUNK_SIZE;
+            return DataChunckSize;
         }
 
         private int Buffer(short[] data, uint id)
@@ -105,9 +106,9 @@ namespace NScumm.Audio.Player
             var uiBuffer = new uint[1];
 
             Al.GenSources(1, out uint[] source);
-            Al.GenBuffers(NUM_BUFFERS, out uint[] buffer);
+            Al.GenBuffers(NumBuffers, out uint[] buffer);
 
-            var data = new short[DATA_CHUNK_SIZE];
+            var data = new short[DataChunckSize];
 
             // Fill all the buffers with audio data from the wave file
             foreach (var id in buffer)

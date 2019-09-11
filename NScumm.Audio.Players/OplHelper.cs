@@ -1,10 +1,10 @@
-//
-//  MusicManager.cs
+﻿//
+//  XsmPlayer.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2019 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,25 +19,14 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Collections.Generic;
-using NScumm.Core.Audio.SoftSynth;
-
-namespace NScumm.Core.Audio
+namespace NScumm.Audio.Players
 {
-    /// <summary>
-    /// Singleton class which manages all Music plugins.
-    /// </summary>
-    public static class MusicManager
+    internal static class OplHelper
     {
-        public static IList<IMusicPluginObject> GetPlugins()
-        {
-            return new IMusicPluginObject[]
-            {
-                new AdlibEmuMusicPlugin(), new CMSMusicPlugin(),
-                new NullMusicPlugin(), new PCJuniorMusicPlugin(),
-                new PCSpeakerMusicPlugin(), new TownsEmuMusicPlugin()
-            };
-        }
+        public static readonly ushort[] note_table =
+            { 363, 385, 408, 432, 458, 485, 514, 544, 577, 611, 647, 686};
+
+        public static readonly byte[] op_table =
+            { 0x00, 0x01, 0x02, 0x08, 0x09, 0x0a, 0x10, 0x11, 0x12};
     }
-    
 }

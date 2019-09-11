@@ -20,10 +20,11 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
+using NScumm.Audio.Players;
 using NScumm.Core.Audio.OPL;
 using NScumm.Core.Audio.OPL.DosBox;
 
-namespace NScumm.Audio.Player
+namespace NScumm.Audio.AlPlayer
 {
     class Program
     {
@@ -40,12 +41,7 @@ namespace NScumm.Audio.Player
             var opl = new DosBoxOPL(OplType.Opl2);
             opl.Init(Rate);
 
-            var players = new IMusicPlayer[]
-            {
-                new DroPlayer(opl),
-                new ImfPlayer(opl),
-                new SngPlayer(opl)
-            };
+            var players = Factory.GetPlayers(opl);
             foreach (var player in players)
             {
                 if (!player.Load(args[0]))

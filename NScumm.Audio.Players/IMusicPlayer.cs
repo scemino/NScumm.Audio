@@ -1,10 +1,10 @@
-//
-//  ITownsAudioInterfacePluginDriver.cs
+﻿//
+//  IMusicPlayer.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2015 
+//  Copyright (c) 2019 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,10 +19,16 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace NScumm.Core.Audio.SoftSynth
+using NScumm.Core.Audio.OPL;
+
+namespace NScumm.Audio.Players
 {
-    public interface ITownsAudioInterfacePluginDriver
+    public interface IMusicPlayer
     {
-        void TimerCallback(int timerId);
-    }    
+        IOpl Opl { get; }
+        float RefreshRate { get; }
+
+        bool Load(string path);
+        bool Update();
+    }
 }

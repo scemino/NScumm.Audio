@@ -1,14 +1,16 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio", "NScumm.Audio\NScumm.Audio.csproj", "{C16BB54A-AE4B-4AB1-AA1A-64472908B6CD}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio.Player", "NScumm.Audio.Player\NScumm.Audio.Player.csproj", "{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio.AlPlayer", "NScumm.Audio.Player\NScumm.Audio.ALPlayer.csproj", "{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A7D04B9-2124-44E3-927B-576DFC7BC2D6}"
 	ProjectSection(SolutionItems) = preProject
 		LICENSE = LICENSE
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio.Players", "NScumm.Audio.Players\NScumm.Audio.Players.csproj", "{A2128435-325D-40FB-A664-20FAF77058F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio", "NScumm.Audio\NScumm.Audio.csproj", "{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,14 +18,18 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{C16BB54A-AE4B-4AB1-AA1A-64472908B6CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C16BB54A-AE4B-4AB1-AA1A-64472908B6CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C16BB54A-AE4B-4AB1-AA1A-64472908B6CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C16BB54A-AE4B-4AB1-AA1A-64472908B6CD}.Release|Any CPU.Build.0 = Release|Any CPU
 		{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A2128435-325D-40FB-A664-20FAF77058F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A2128435-325D-40FB-A664-20FAF77058F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A2128435-325D-40FB-A664-20FAF77058F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A2128435-325D-40FB-A664-20FAF77058F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NScumm.Audio\NScumm.Audio.csproj" />
+    <ProjectReference Include="..\NScumm.Audio.Players\NScumm.Audio.Players.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Player_AD.cs" />

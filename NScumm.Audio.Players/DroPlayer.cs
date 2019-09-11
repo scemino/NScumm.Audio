@@ -24,7 +24,7 @@ using System.IO;
 using System.Text;
 using NScumm.Core.Audio.OPL;
 
-namespace NScumm.Audio.Player
+namespace NScumm.Audio.Players
 {
 
     /// <summary>

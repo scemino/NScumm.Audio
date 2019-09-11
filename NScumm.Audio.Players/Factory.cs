@@ -1,10 +1,10 @@
-//
-//  MusicPluginObject.cs
+﻿//
+//  Factory.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
 //
-//  Copyright (c) 2014 
+//  Copyright (c) 2019 
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -19,31 +19,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-using System.Collections.Generic;
-using NScumm.Core.Audio.Midi;
+using NScumm.Core.Audio.OPL;
 
-namespace NScumm.Core.Audio
+namespace NScumm.Audio.Players
 {
-    abstract class MusicPluginObject: IMusicPluginObject
+    public static class Factory
     {
-        public abstract IList<MusicDevice> GetDevices();
-
-        public abstract IMidiDriver CreateInstance(IMixer mixer, DeviceHandle handle);
-
-        public abstract string Id
+        public static IMusicPlayer[] GetPlayers(IOpl opl)
         {
-            get;
-        }
-
-        public abstract string Name
-        {
-            get;
-        }
-
-        public virtual bool CheckDevice(DeviceHandle handle)
-        {
-            return true;
+            return new IMusicPlayer[]
+            {
+                new DroPlayer(opl),
+                new ImfPlayer(opl),
+                new SngPlayer(opl),
+                new XsmPlayer(opl)
+            };
         }
     }
-    
 }

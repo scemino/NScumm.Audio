@@ -1,5 +1,5 @@
 ﻿//
-//  DroPlayer.cs
+//  ImfPlayer.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
@@ -24,7 +24,7 @@ using System.IO;
 using System.Text;
 using NScumm.Core.Audio.OPL;
 
-namespace NScumm.Audio.Player
+namespace NScumm.Audio.Players
 {
     /// <summary>
     /// IMF Player by Simon Peter dn.tlp@gmx.net
