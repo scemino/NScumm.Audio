@@ -32,7 +32,8 @@ namespace NScumm.Audio.Players
                 new DroPlayer(opl),
                 new ImfPlayer(opl),
                 new SngPlayer(opl),
-                new XsmPlayer(opl)
+                new XsmPlayer(opl),
+                new S3mPlayer(opl),
             };
         }
     }
