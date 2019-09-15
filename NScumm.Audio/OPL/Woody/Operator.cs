@@ -67,6 +67,10 @@ namespace NScumm.Audio.OPL.Woody
         public byte step_skip_pos_a;          // position of 8-cyclic step skipping (always 2^x to check against mask)
         public int env_step_skip_a;            // bitmask that determines if a step is skipped (respective bit is zero then)
 
+        // OPL3
+        public bool is_4op, is_4op_attached;   // base of a 4op channel/part of a 4op channel
+        public int left_pan, right_pan;		// opl3 stereo panning amount
+
         public void DisableOperator(int act_type)
         {
             // check if this is really an on-off transition

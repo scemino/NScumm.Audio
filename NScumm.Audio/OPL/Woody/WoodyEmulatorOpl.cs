@@ -29,6 +29,11 @@ namespace NScumm.Audio.OPL.Woody
     {
         public bool IsStereo => false;
 
+        public WoodyEmulatorOpl(OplType type)
+        {
+            _type = type;
+        }
+
         public void ReadBuffer(short[] buf, int pos, int samples)
         {
             _opl.AdlibGetSample(buf, pos, samples);
@@ -41,9 +46,11 @@ namespace NScumm.Audio.OPL.Woody
 
         public void Init(int rate)
         {
+            _opl = new OPLChipClass(_type);
             _opl.AdlibInit(rate, 1, 2);
         }
 
-        private readonly OPLChipClass _opl = new OPLChipClass();
+        private OPLChipClass _opl;
+        private readonly OplType _type;
     }
 }

@@ -38,7 +38,7 @@ namespace NScumm.Audio.AlPlayer
                 return -1;
             }
 
-            var opl = new WoodyEmulatorOpl();
+            var opl = new WoodyEmulatorOpl(OplType.Opl3);
             opl.Init(Rate);
 
             var players = Factory.GetPlayers(opl);

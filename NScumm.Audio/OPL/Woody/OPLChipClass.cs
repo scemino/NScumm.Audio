@@ -19,13 +19,22 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 using System;
+using NScumm.Core.Audio.OPL;
+
 namespace NScumm.Audio.OPL.Woody
 {
+    /// <summary>
+    /// Originally based on ADLIBEMU.C, an AdLib/OPL2 emulation library by Ken Silverman
+    /// Copyright(C) 1998-2001 Ken Silverman
+    /// Ken Silverman's official web site: "http://www.advsys.net/ken"
+    /// This code has been adapted from adplug https://github.com/adplug/adplug
+    /// </summary>
     internal sealed class OPLChipClass
     {
         // per-chip variables
-        Operator[] op = new Operator[WoodyConstants.MAXOPERATORS];
+        Operator[] op;
 
+        OplType _type;
         int int_samplerate;
         int int_numsamplechannels;
         int int_bytespersample;
@@ -151,14 +160,13 @@ namespace NScumm.Audio.OPL.Woody
 
         public static int generator_add;	// should be a chip parameter
 
-        static readonly byte[] regbase2modop = {
-            0,1,2,0,1,2,0,0,3,4,5,3,4,5,0,0,6,7,8,6,7,8
-        };
-        static readonly byte[] regbase2op = {
-            0,1,2,9,10,11,0,0,3,4,5,12,13,14,0,0,6,7,8,15,16,17
-        };
+        byte[] regbase2modop;
+        byte[] regbase2op;
 
         static int initfirstime;
+
+        private int NumChannels => _type == OplType.Opl3 ? 18 : 9;
+        private int MaxOperators => NumChannels * 2;
 
         private Action<Operator>[] opfuncs = {
             op=>op.Attack(),
@@ -168,6 +176,36 @@ namespace NScumm.Audio.OPL.Woody
 	        op=>op.Release(),	// sustain_nokeep phase (release-style)
 	        op=>op.Off()
         };
+
+        public OPLChipClass(OplType type)
+        {
+            op = new Operator[MaxOperators];
+            _type = type;
+            if (_type == OplType.Opl3)
+            {
+                adlibreg = new byte[512];    // adlib register set
+                wave_sel = new byte[44];     // waveform selection
+                regbase2modop = new byte[]{
+                    0,1,2,0,1,2,0,0,3,4,5,3,4,5,0,0,6,7,8,6,7,8,					// first set
+                    18,19,20,18,19,20,0,0,21,22,23,21,22,23,0,0,24,25,26,24,25,26	// second set
+                };
+                regbase2op = new byte[]{
+                    0,1,2,9,10,11,0,0,3,4,5,12,13,14,0,0,6,7,8,15,16,17,			// first set
+                    18,19,20,27,28,29,0,0,21,22,23,30,31,32,0,0,24,25,26,33,34,35	// second set
+                };
+            }
+            else
+            {
+                adlibreg = new byte[256];    // adlib register set
+                wave_sel = new byte[22];     // waveform selection
+                regbase2modop = new byte[]{
+                    0,1,2,0,1,2,0,0,3,4,5,3,4,5,0,0,6,7,8,6,7,8
+                };
+                regbase2op = new byte[]{
+                    0,1,2,9,10,11,0,0,3,4,5,12,13,14,0,0,6,7,8,15,16,17
+                };
+            }
+        }
 
         /// <summary>
         /// Enable an operator
@@ -222,7 +260,7 @@ namespace NScumm.Audio.OPL.Woody
             int attackrate = adlibreg[WoodyConstants.ARC_ATTR_DECR + regbase] >> 4;
             if (attackrate != 0)
             {
-                double f = (double)(Math.Pow(WoodyConstants.FL2, (double)attackrate + (op_pt.toff >> 2) - 1) * attackconst[op_pt.toff & 3] * recipsamp);
+                double f = Math.Pow(WoodyConstants.FL2, (double)attackrate + (op_pt.toff >> 2) - 1) * attackconst[op_pt.toff & 3] * recipsamp;
                 // attack rate coefficients
                 op_pt.a0 = 0.0377 * f;
                 op_pt.a1 = 10.73 * f + 1;
@@ -237,7 +275,7 @@ namespace NScumm.Audio.OPL.Woody
                 byte[] step_skip_mask = { 0xff, 0xfe, 0xee, 0xba, 0xaa };
                 op_pt.env_step_skip_a = step_skip_mask[step_num];
 
-                if (step_skip >= 62)
+                if (step_skip >= ((_type == OplType.Opl3) ? 60 : 62))
                 {
                     op_pt.a0 = 2.0;  // something that triggers an immediate transition to amp:=1.0
                     op_pt.a1 = 0.0;
@@ -309,6 +347,10 @@ namespace NScumm.Audio.OPL.Woody
 
         private void ChangeWaveform(int regbase, Operator op_pt)
         {
+            if (_type == OplType.Opl3)
+            {
+                if (regbase >= WoodyConstants.ARC_SECONDSET) regbase -= (WoodyConstants.ARC_SECONDSET - 22);  // second set starts at 22
+            }
             // waveform selection
             op_pt.cur_wmask = wavemask[wave_sel[regbase]];
             op_pt.cur_wform = waveform[wave_sel[regbase]];
@@ -352,28 +394,37 @@ namespace NScumm.Audio.OPL.Woody
             generator_add = ((int)(WoodyConstants.INTFREQU * WoodyConstants.FIXEDPT / int_samplerate));
 
 
-            for (var i = 0; i < WoodyConstants.MAXOPERATORS; i++)
+            for (var i = 0; i < op.Length; i++)
             {
-                op[i] = new Operator();
-                op[i].op_state = WoodyConstants.OF_TYPE_OFF;
-                op[i].act_state = WoodyConstants.OP_ACT_OFF;
-                op[i].amp = 0.0;
-                op[i].step_amp = 0.0;
-                op[i].vol = 0.0;
-                op[i].tcount = 0;
-                op[i].tinc = 0;
-                op[i].toff = 0;
-                op[i].cur_wmask = wavemask[0];
-                op[i].cur_wform = waveform[0];
-                op[i].freq_high = 0;
+                op[i] = new Operator
+                {
+                    op_state = WoodyConstants.OF_TYPE_OFF,
+                    act_state = WoodyConstants.OP_ACT_OFF,
+                    amp = 0.0,
+                    step_amp = 0.0,
+                    vol = 0.0,
+                    tcount = 0,
+                    tinc = 0,
+                    toff = 0,
+                    cur_wmask = wavemask[0],
+                    cur_wform = waveform[0],
+                    freq_high = 0,
 
-                op[i].generator_pos = 0;
-                op[i].cur_env_step = 0;
-                op[i].env_step_a = 0;
-                op[i].env_step_d = 0;
-                op[i].env_step_r = 0;
-                op[i].step_skip_pos_a = 0;
-                op[i].env_step_skip_a = 0;
+                    generator_pos = 0,
+                    cur_env_step = 0,
+                    env_step_a = 0,
+                    env_step_d = 0,
+                    env_step_r = 0,
+                    step_skip_pos_a = 0,
+                    env_step_skip_a = 0
+                };
+                if (_type == OplType.Opl3)
+                {
+                    op[i].is_4op = false;
+                    op[i].is_4op_attached = false;
+                    op[i].left_pan = 1;
+                    op[i].right_pan = 1;
+                }
             }
 
             recipsamp = 1.0 / int_samplerate;
@@ -487,6 +538,26 @@ namespace NScumm.Audio.OPL.Woody
                                 status = 0;
                             }
                             break;
+                        case 0x04 | WoodyConstants.ARC_SECONDSET:
+                            if (_type == OplType.Opl3)
+                            {
+                                // 4op enable/disable switches for each possible channel
+                                op[0].is_4op = (val & 1) > 0;
+                                op[3].is_4op_attached = op[0].is_4op;
+                                op[1].is_4op = (val & 2) > 0;
+                                op[4].is_4op_attached = op[1].is_4op;
+                                op[2].is_4op = (val & 4) > 0;
+                                op[5].is_4op_attached = op[2].is_4op;
+                                op[18].is_4op = (val & 8) > 0;
+                                op[21].is_4op_attached = op[18].is_4op;
+                                op[19].is_4op = (val & 16) > 0;
+                                op[22].is_4op_attached = op[19].is_4op;
+                                op[20].is_4op = (val & 32) > 0;
+                                op[23].is_4op_attached = op[20].is_4op;
+                            }
+                            break;
+                        case 0x05 | WoodyConstants.ARC_SECONDSET:
+                            break;
                         case 0x08:
                             // CSW, note select
                             break;
@@ -511,8 +582,22 @@ namespace NScumm.Audio.OPL.Woody
 
                             // change frequency calculations of this operator as
                             // key scale rate and frequency multiplicator can be changed
-
-                            ChangeFrequency(chanbase, @base, op_ptr);
+                            if (_type == OplType.Opl3)
+                            {
+                                if (((adlibreg[0x105] & 1) != 0) && op[modop].is_4op_attached)
+                                {
+                                    // operator uses frequency of channel
+                                    ChangeFrequency(chanbase - 3, regbase, op_ptr);
+                                }
+                                else
+                                {
+                                    ChangeFrequency(chanbase, regbase, op_ptr);
+                                }
+                            }
+                            else
+                            {
+                                ChangeFrequency(chanbase, @base, op_ptr);
+                            }
                         }
                     }
                     break;
@@ -530,8 +615,23 @@ namespace NScumm.Audio.OPL.Woody
                             // change frequency calculations of this operator as
                             // key scale level and output rate can be changed
                             var op_ptr = op[modop + ((num < 3) ? 0 : 9)];
-
-                            ChangeFrequency(chanbase, @base, op_ptr);
+                            if (_type == OplType.Opl3)
+                            {
+                                int regbase = @base + second_set;
+                                if (((adlibreg[0x105] & 1) != 0) && op[modop].is_4op_attached)
+                                {
+                                    // operator uses frequency of channel
+                                    ChangeFrequency(chanbase - 3, regbase, op_ptr);
+                                }
+                                else
+                                {
+                                    ChangeFrequency(chanbase, regbase, op_ptr);
+                                }
+                            }
+                            else
+                            {
+                                ChangeFrequency(chanbase, @base, op_ptr);
+                            }
                         }
                     }
                     break;
@@ -576,6 +676,10 @@ namespace NScumm.Audio.OPL.Woody
                         if (@base < 9)
                         {
                             int opbase = second_set != 0 ? (@base + 18) : @base;
+                            if (_type == OplType.Opl3)
+                            {
+                                if (((adlibreg[0x105] & 1) != 0) && op[opbase].is_4op_attached) break;
+                            }
                             // regbase of modulator:
                             int modbase = modulatorbase[@base] + second_set;
 
@@ -583,7 +687,15 @@ namespace NScumm.Audio.OPL.Woody
 
                             ChangeFrequency(chanbase, modbase, op[opbase]);
                             ChangeFrequency(chanbase, modbase + 3, op[opbase + 9]);
-
+                            if (_type == OplType.Opl3)
+                            {
+                                // for 4op channels all four operators are modified to the frequency of the channel
+                                if (((adlibreg[0x105] & 1) != 0) && op[second_set != 0 ? (@base + 18) : @base].is_4op)
+                                {
+                                    ChangeFrequency(chanbase, modbase + 8, op[opbase + 3]);
+                                    ChangeFrequency(chanbase, modbase + 3 + 8, op[opbase + 3 + 9]);
+                                }
+                            }
                         }
                     }
                     break;
@@ -591,6 +703,10 @@ namespace NScumm.Audio.OPL.Woody
                     {
                         if (idx == WoodyConstants.ARC_PERC_MODE)
                         {
+                            if (_type == OplType.Opl3)
+                            {
+                                if (second_set != 0) return;
+                            }
                             if ((val & 0x30) == 0x30)
                             {       // BassDrum active
                                 EnableOperator(16, op[6], WoodyConstants.OP_ACT_PERC);
@@ -647,7 +763,10 @@ namespace NScumm.Audio.OPL.Woody
                         if (@base < 9)
                         {
                             int opbase = second_set != 0 ? (@base + 18) : @base;
-
+                            if (_type == OplType.Opl3)
+                            {
+                                if (((adlibreg[0x105] & 1) != 0) && op[opbase].is_4op_attached) break;
+                            }
                             // regbase of modulator:
                             int modbase = modulatorbase[@base] + second_set;
 
@@ -656,13 +775,32 @@ namespace NScumm.Audio.OPL.Woody
                                 // operator switched on
                                 EnableOperator(modbase, op[opbase], WoodyConstants.OP_ACT_NORMAL);       // modulator (if 2op)
                                 EnableOperator(modbase + 3, op[opbase + 9], WoodyConstants.OP_ACT_NORMAL);   // carrier (if 2op)
+                                if (_type == OplType.Opl3)
+                                {
+                                    // for 4op channels all four operators are switched on
+                                    if (((adlibreg[0x105] & 1) != 0) && op[opbase].is_4op)
+                                    {
+                                        // turn on chan+3 operators as well
+                                        EnableOperator(modbase + 8, op[opbase + 3], WoodyConstants.OP_ACT_NORMAL);
+                                        EnableOperator(modbase + 3 + 8, op[opbase + 3 + 9], WoodyConstants.OP_ACT_NORMAL);
+                                    }
+                                }
                             }
                             else
                             {
                                 // operator switched off
                                 op[opbase].DisableOperator(WoodyConstants.OP_ACT_NORMAL);
                                 op[opbase + 9].DisableOperator(WoodyConstants.OP_ACT_NORMAL);
-
+                                if (_type == OplType.Opl3)
+                                {
+                                    // for 4op channels all four operators are switched off
+                                    if (((adlibreg[0x105] & 1) != 0) && op[opbase].is_4op)
+                                    {
+                                        // turn off chan+3 operators as well
+                                        op[opbase + 3].DisableOperator(WoodyConstants.OP_ACT_NORMAL);
+                                        op[opbase + 3 + 9].DisableOperator(WoodyConstants.OP_ACT_NORMAL);
+                                    }
+                                }
                             }
 
                             int chanbase = @base + second_set;
@@ -671,6 +809,16 @@ namespace NScumm.Audio.OPL.Woody
                             // the frequency of the channel has changed
                             ChangeFrequency(chanbase, modbase, op[opbase]);
                             ChangeFrequency(chanbase, modbase + 3, op[opbase + 9]);
+                            if (_type == OplType.Opl3)
+                            {
+                                // for 4op channels all four operators are modified to the frequency of the channel
+                                if (((adlibreg[0x105] & 1) != 0) && op[second_set != 0 ? (@base + 18) : @base].is_4op)
+                                {
+                                    // change frequency calculations of chan+3 operators as well
+                                    ChangeFrequency(chanbase, modbase + 8, op[opbase + 3]);
+                                    ChangeFrequency(chanbase, modbase + 3 + 8, op[opbase + 3 + 9]);
+                                }
+                            }
                         }
                     }
                     break;
@@ -683,6 +831,12 @@ namespace NScumm.Audio.OPL.Woody
                             int opbase = second_set != 0 ? (@base + 18) : @base;
                             int chanbase = @base + second_set;
                             ChangeFeedback(chanbase, op[opbase]);
+                            if (_type == OplType.Opl3)
+                            {
+                                // OPL3 panning
+                                op[opbase].left_pan = ((val & 0x10) >> 4);
+                                op[opbase].right_pan = ((val & 0x20) >> 5);
+                            }
                         }
                     }
                     break;
@@ -693,8 +847,16 @@ namespace NScumm.Audio.OPL.Woody
                         int @base = (idx - WoodyConstants.ARC_WAVE_SEL) & 0xff;
                         if ((num < 6) && (@base < 22))
                         {
-
-                            if ((adlibreg[0x01] & 0x20) != 0)
+                            if (_type == OplType.Opl3)
+                            {
+                                int wselbase = second_set != 0 ? (@base + 22) : @base;    // for easier mapping onto wave_sel[]
+                                                                                          // change waveform
+                                if ((adlibreg[0x105] & 1) != 0) wave_sel[wselbase] = (byte)(val & 7);  // opl3 mode enabled, all waveforms accessible
+                                else wave_sel[wselbase] = (byte)(val & 3);
+                                var op_ptr = op[regbase2modop[wselbase] + ((num < 3) ? 0 : 9)];
+                                ChangeWaveform(wselbase, op_ptr);
+                            }
+                            else if ((adlibreg[0x01] & 0x20) != 0)
                             {
                                 // wave selection enabled, change waveform
                                 wave_sel[@base] = (byte)(val & 3);
@@ -709,6 +871,15 @@ namespace NScumm.Audio.OPL.Woody
 
         private int AdlibRegRead(int port)
         {
+            if (_type == OplType.Opl3)
+            {
+                // opl3-detection routines require ret&6 to be zero
+                if ((port & 1) == 0)
+                {
+                    return status;
+                }
+                return 0x00;
+            }
             // opl2-detection routines require ret&6 to be 6
             if ((port & 1) == 0)
             {
@@ -720,6 +891,14 @@ namespace NScumm.Audio.OPL.Woody
         private void AdlibWriteIndex(int port, byte val)
         {
             opl_index = val;
+            if (_type == OplType.Opl3)
+            {
+                if ((port & 3) != 0)
+                {
+                    // possibly second set
+                    if (((adlibreg[0x105] & 1) != 0) || (opl_index == 5)) opl_index |= WoodyConstants.ARC_SECONDSET;
+                }
+            }
         }
 
         private static short Clipit8(int ival)
@@ -758,6 +937,8 @@ namespace NScumm.Audio.OPL.Woody
             int sndptr1 = 0;
 
             var outbufl = new int[WoodyConstants.BLOCKBUF_SIZE];
+            // second output buffer (right channel for opl3 stereo)
+            var outbufr = new int[WoodyConstants.BLOCKBUF_SIZE];
 
 
             // vibrato/tremolo lookup tables (global, to possibly be used by all operators)
@@ -772,7 +953,11 @@ namespace NScumm.Audio.OPL.Woody
                 if (endsamples > WoodyConstants.BLOCKBUF_SIZE) endsamples = WoodyConstants.BLOCKBUF_SIZE;
 
                 Array.Clear(outbufl, 0, endsamples);
-
+                if (_type == OplType.Opl3)
+                {
+                    // clear second output buffer (opl3 stereo)
+                    if ((adlibreg[0x105] & 1) != 0) Array.Clear(outbufr, 0, endsamples);
+                }
 
                 // calculate vibrato/tremolo lookup tables
                 int vib_tshift = ((adlibreg[WoodyConstants.ARC_PERC_MODE] & 0x40) == 0) ? 1 : 0;    // 14cents/7cents switching
@@ -817,9 +1002,7 @@ namespace NScumm.Audio.OPL.Woody
                                 op[cptr + 9].Output(0, tremval1()[i]);
 
                                 int chanval = op[cptr + 9].cval * 2;
-                                ChanVal(outbufl, i, chanval);
-
-
+                                ChanVal(outbufl, outbufr, cptr, i, chanval);
                             }
                         }
                     }
@@ -859,7 +1042,7 @@ namespace NScumm.Audio.OPL.Woody
                                 op[cptr + 9].Output(op[cptr].cval * WoodyConstants.FIXEDPT, tremval2()[i]);
 
                                 int chanval = op[cptr + 9].cval * 2;
-                                ChanVal(outbufl, i, chanval);
+                                ChanVal(outbufl, outbufr, cptr, i, chanval);
 
                             }
                         }
@@ -887,7 +1070,7 @@ namespace NScumm.Audio.OPL.Woody
                             opfuncs[op[cptr].op_state](op[cptr]);        //TomTom
                             op[cptr].Output(0, tremval3()[i]);
                             int chanval = op[cptr].cval * 2;
-                            ChanVal(outbufl, i, chanval);
+                            ChanVal(outbufl, outbufr, cptr, i, chanval);
 
                         }
                     }
@@ -944,26 +1127,187 @@ namespace NScumm.Audio.OPL.Woody
                             op[8 + 9].Output(0, tremval4()[i]);
 
                             int chanval = (op[7].cval + op[7 + 9].cval + op[8 + 9].cval) * 2;
-                            ChanVal(outbufl, i, chanval);
-
+                            ChanVal(outbufl, outbufr, cptr, i, chanval);
                         }
                     }
                 }
 
-                int max_channel = WoodyConstants.NUM_CHANNELS;
-
+                int max_channel = NumChannels;
+                if (_type == OplType.Opl3)
+                {
+                    if ((adlibreg[0x105] & 1) == 0) max_channel = NumChannels / 2;
+                }
                 for (var cur_ch = max_channel - 1; cur_ch >= 0; cur_ch--)
                 {
                     // skip drum/percussion operators
                     if (((adlibreg[WoodyConstants.ARC_PERC_MODE] & 0x20) != 0) && (cur_ch >= 6) && (cur_ch < 9)) continue;
 
                     int k = cur_ch;
-
-                    cptr = cur_ch;
-
+                    if (_type == OplType.Opl3)
+                    {
+                        if (cur_ch < 9)
+                        {
+                            cptr = cur_ch;
+                        }
+                        else
+                        {
+                            cptr = cur_ch + 9; // second set is operator18-operator35
+                            k += (-9 + 256);        // second set uses registers 0x100 onwards
+                        }
+                        // check if this operator is part of a 4-op
+                        if (((adlibreg[0x105] & 1) != 0) && op[cptr].is_4op_attached) continue;
+                    }
+                    else
+                    {
+                        cptr = cur_ch;
+                    }
                     // check for FM/AM
                     if ((adlibreg[WoodyConstants.ARC_FEEDBACK + k] & 1) != 0)
                     {
+                        if (_type == OplType.Opl3)
+                        {
+                            if (((adlibreg[0x105] & 1) != 0) && op[cptr].is_4op)
+                            {
+                                if ((adlibreg[WoodyConstants.ARC_FEEDBACK + k + 3] & 1) != 0)
+                                {
+                                    // AM-AM-style synthesis (op1[fb] + (op2 * op3) + op4)
+                                    if (op[cptr].op_state != WoodyConstants.OF_TYPE_OFF)
+                                    {
+                                        if (op[cptr].vibrato)
+                                        {
+                                            vibval1 = () => vibval_var1;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval1()[i] = (int)((vib_lut[i] * op[cptr].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval1 = () => vibval_const;
+                                        if (op[cptr].tremolo) tremval1 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr].Advance(vibval1()[i]);
+                                            opfuncs[op[cptr].op_state](op[cptr]);
+                                            op[cptr].Output((op[cptr].lastcval + op[cptr].cval) * op[cptr].mfbi / 2, tremval1()[i]);
+
+                                            int chanval = op[cptr].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+                                        }
+                                    }
+
+                                    if ((op[cptr + 3].op_state != WoodyConstants.OF_TYPE_OFF) || (op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                    {
+                                        if ((op[cptr + 9].vibrato) && (op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                        {
+                                            vibval1 = () => vibval_var1;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval1()[i] = (int)((vib_lut[i] * op[cptr + 9].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval1 = () => vibval_const;
+                                        if (op[cptr + 9].tremolo) tremval1 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+                                        if (op[cptr + 3].tremolo) tremval2 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval2 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr + 9].Advance(vibval1()[i]);
+                                            opfuncs[op[cptr + 9].op_state](op[cptr + 9]);
+                                            op[cptr + 9].Output(0, tremval1()[i]);
+
+                                            op[cptr + 3].Advance(0);
+                                            opfuncs[op[cptr + 3].op_state](op[cptr + 3]);
+                                            op[cptr + 3].Output(op[cptr + 9].cval * WoodyConstants.FIXEDPT, tremval2()[i]);
+
+                                            int chanval = op[cptr + 3].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+                                        }
+                                    }
+
+                                    if (op[cptr + 3 + 9].op_state != WoodyConstants.OF_TYPE_OFF)
+                                    {
+                                        if (op[cptr + 3 + 9].tremolo) tremval1 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr + 3 + 9].Advance(0);
+                                            opfuncs[op[cptr + 3 + 9].op_state](op[cptr + 3 + 9]);
+                                            op[cptr + 3 + 9].Output(0, tremval1()[i]);
+
+                                            int chanval = op[cptr + 3 + 9].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    // AM-FM-style synthesis (op1[fb] + (op2 * op3 * op4))
+                                    if (op[cptr].op_state != WoodyConstants.OF_TYPE_OFF)
+                                    {
+                                        if (op[cptr].vibrato)
+                                        {
+                                            vibval1 = () => vibval_var1;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval1()[i] = (int)((vib_lut[i] * op[cptr].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval1 = () => vibval_const;
+                                        if (op[cptr].tremolo) tremval1 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr].Advance(vibval1()[i]);
+                                            opfuncs[op[cptr].op_state](op[cptr]);
+                                            op[cptr].Output((op[cptr].lastcval + op[cptr].cval) * op[cptr].mfbi / 2, tremval1()[i]);
+
+                                            int chanval = op[cptr].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+                                        }
+                                    }
+
+                                    if ((op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF) || (op[cptr + 3].op_state != WoodyConstants.OF_TYPE_OFF) || (op[cptr + 3 + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                    {
+                                        if ((op[cptr + 9].vibrato) && (op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                        {
+                                            vibval1 = () => vibval_var1;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval1()[i] = (int)((vib_lut[i] * op[cptr + 9].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval1 = () => vibval_const;
+                                        if (op[cptr + 9].tremolo) tremval1 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+                                        if (op[cptr + 3].tremolo) tremval2 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval2 = () => tremval_const;
+                                        if (op[cptr + 3 + 9].tremolo) tremval3 = () => trem_lut;    // tremolo enabled, use table
+                                        else tremval3 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr + 9].Advance(vibval1()[i]);
+                                            opfuncs[op[cptr + 9].op_state](op[cptr + 9]);
+                                            op[cptr + 9].Output(0, tremval1()[i]);
+
+                                            op[cptr + 3].Advance(0);
+                                            opfuncs[op[cptr + 3].op_state](op[cptr + 3]);
+                                            op[cptr + 3].Output(op[cptr + 9].cval * WoodyConstants.FIXEDPT, tremval2()[i]);
+
+                                            op[cptr + 3 + 9].Advance(0);
+                                            opfuncs[op[cptr + 3 + 9].op_state](op[cptr + 3 + 9]);
+                                            op[cptr + 3 + 9].Output(op[cptr + 3].cval * WoodyConstants.FIXEDPT, tremval3()[i]);
+
+                                            int chanval = op[cptr + 3 + 9].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+                                        }
+                                    }
+                                }
+                                continue;
+                            }
+                        }
                         // 2op additive synthesis
                         if ((op[cptr + 9].op_state == WoodyConstants.OF_TYPE_OFF) && (op[cptr].op_state == WoodyConstants.OF_TYPE_OFF)) continue;
                         if ((op[cptr].vibrato) && (op[cptr].op_state != WoodyConstants.OF_TYPE_OFF))
@@ -999,12 +1343,142 @@ namespace NScumm.Audio.OPL.Woody
                             op[cptr + 9].Output(0, tremval2()[i]);
 
                             int chanval = op[cptr + 9].cval + op[cptr].cval;
-                            ChanVal(outbufl, i, chanval);
+                            ChanVal(outbufl, outbufr, cptr, i, chanval);
 
                         }
                     }
                     else
                     {
+                        if (_type == OplType.Opl3)
+                        {
+                            if (((adlibreg[0x105] & 1) != 0) && op[cptr].is_4op)
+                            {
+                                if ((adlibreg[WoodyConstants.ARC_FEEDBACK + k + 3] & 1) != 0)
+                                {
+                                    // FM-AM-style synthesis ((op1[fb] * op2) + (op3 * op4))
+                                    if ((op[cptr + 0].op_state != WoodyConstants.OF_TYPE_OFF) || (op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                    {
+                                        if ((op[cptr + 0].vibrato) && (op[cptr + 0].op_state != WoodyConstants.OF_TYPE_OFF))
+                                        {
+                                            vibval1 = () => vibval_var1;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval1()[i] = (int)((vib_lut[i] * op[cptr + 0].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval1 = () => vibval_const;
+                                        if ((op[cptr + 9].vibrato) && (op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                        {
+                                            vibval2 = () => vibval_var2;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval2()[i] = (int)((vib_lut[i] * op[cptr + 9].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval2 = () => vibval_const;
+                                        if (op[cptr + 0].tremolo) tremval1 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+                                        if (op[cptr + 9].tremolo) tremval2 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval2 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr + 0].Advance(vibval1()[i]);
+                                            opfuncs[op[cptr + 0].op_state](op[cptr + 0]);
+                                            op[cptr + 0].Output((op[cptr + 0].lastcval + op[cptr + 0].cval) * op[cptr + 0].mfbi / 2, tremval1()[i]);
+
+                                            op[cptr + 9].Advance(vibval2()[i]);
+                                            opfuncs[op[cptr + 9].op_state](op[cptr + 9]);
+                                            op[cptr + 9].Output(op[cptr + 0].cval * WoodyConstants.FIXEDPT, tremval2()[i]);
+
+                                            int chanval = op[cptr + 9].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+
+
+                                        }
+                                    }
+
+                                    if ((op[cptr + 3].op_state != WoodyConstants.OF_TYPE_OFF) || (op[cptr + 3 + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                    {
+                                        if (op[cptr + 3].tremolo) tremval1 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+                                        if (op[cptr + 3 + 9].tremolo) tremval2 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval2 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr + 3].Advance(0);
+                                            opfuncs[op[cptr + 3].op_state](op[cptr + 3]);
+                                            op[cptr + 3].Output(0, tremval1()[i]);
+
+                                            op[cptr + 3 + 9].Advance(0);
+                                            opfuncs[op[cptr + 3 + 9].op_state](op[cptr + 3 + 9]);
+                                            op[cptr + 3 + 9].Output(op[cptr + 3].cval * WoodyConstants.FIXEDPT, tremval2()[i]);
+
+                                            int chanval = op[cptr + 3 + 9].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+
+
+                                        }
+                                    }
+
+                                }
+                                else
+                                {
+                                    // FM-FM-style synthesis (op1[fb] * op2 * op3 * op4)
+                                    if ((op[cptr + 0].op_state != WoodyConstants.OF_TYPE_OFF) || (op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF) ||
+                                        (op[cptr + 3].op_state != WoodyConstants.OF_TYPE_OFF) || (op[cptr + 3 + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                    {
+                                        if ((op[cptr + 0].vibrato) && (op[cptr + 0].op_state != WoodyConstants.OF_TYPE_OFF))
+                                        {
+                                            vibval1 = () => vibval_var1;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval1()[i] = (int)((vib_lut[i] * op[cptr + 0].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval1 = () => vibval_const;
+                                        if ((op[cptr + 9].vibrato) && (op[cptr + 9].op_state != WoodyConstants.OF_TYPE_OFF))
+                                        {
+                                            vibval2 = () => vibval_var2;
+                                            for (i = 0; i < endsamples; i++)
+                                                vibval2()[i] = (int)((vib_lut[i] * op[cptr + 9].freq_high / 8) * WoodyConstants.FIXEDPT * WoodyConstants.VIBFAC);
+                                        }
+                                        else vibval2 = () => vibval_const;
+                                        if (op[cptr + 0].tremolo) tremval1 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval1 = () => tremval_const;
+                                        if (op[cptr + 9].tremolo) tremval2 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval2 = () => tremval_const;
+                                        if (op[cptr + 3].tremolo) tremval3 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval3 = () => tremval_const;
+                                        if (op[cptr + 3 + 9].tremolo) tremval4 = () => trem_lut;   // tremolo enabled, use table
+                                        else tremval4 = () => tremval_const;
+
+                                        // calculate channel output
+                                        for (i = 0; i < endsamples; i++)
+                                        {
+                                            op[cptr + 0].Advance(vibval1()[i]);
+                                            opfuncs[op[cptr + 0].op_state](op[cptr + 0]);
+                                            op[cptr + 0].Output((op[cptr + 0].lastcval + op[cptr + 0].cval) * op[cptr + 0].mfbi / 2, tremval1()[i]);
+
+                                            op[cptr + 9].Advance(vibval2()[i]);
+                                            opfuncs[op[cptr + 9].op_state](op[cptr + 9]);
+                                            op[cptr + 9].Output(op[cptr + 0].cval * WoodyConstants.FIXEDPT, tremval2()[i]);
+
+                                            op[cptr + 3].Advance(0);
+                                            opfuncs[op[cptr + 3].op_state](op[cptr + 3]);
+                                            op[cptr + 3].Output(op[cptr + 9].cval * WoodyConstants.FIXEDPT, tremval3()[i]);
+
+                                            op[cptr + 3 + 9].Advance(0);
+                                            opfuncs[op[cptr + 3 + 9].op_state](op[cptr + 3 + 9]);
+                                            op[cptr + 3 + 9].Output(op[cptr + 3].cval * WoodyConstants.FIXEDPT, tremval4()[i]);
+
+                                            int chanval = op[cptr + 3 + 9].cval;
+                                            ChanVal(outbufl, outbufr, cptr, i, chanval);
+
+
+                                        }
+                                    }
+                                }
+                                continue;
+                            }
+                        }
                         // 2op frequency modulation
                         if ((op[cptr + 9].op_state == WoodyConstants.OF_TYPE_OFF) && (op[cptr].op_state == WoodyConstants.OF_TYPE_OFF)) continue;
                         if ((op[cptr].vibrato) && (op[cptr].op_state != WoodyConstants.OF_TYPE_OFF))
@@ -1040,9 +1514,52 @@ namespace NScumm.Audio.OPL.Woody
                             op[cptr + 9].Output(op[cptr].cval * WoodyConstants.FIXEDPT, tremval2()[i]);
 
                             int chanval = op[cptr + 9].cval;
-                            ChanVal(outbufl, i, chanval);
-
+                            ChanVal(outbufl, outbufr, cptr, i, chanval);
                         }
+                    }
+                }
+
+                if (_type == OplType.Opl3)
+                {
+                    if ((adlibreg[0x105] & 1) != 0)
+                    {
+                        if (int_numsamplechannels == 1)
+                        {
+                            if (int_bytespersample == 1)
+                            {
+                                for (i = 0; i < endsamples; i++)
+                                {
+                                    data[pos + sndptr1++] = Clipit8((outbufl[i] + outbufr[i]) / 2);
+                                }
+                            }
+                            else
+                            {
+                                for (i = 0; i < endsamples; i++)
+                                {
+                                    data[pos + sndptr++] = Clipit16((outbufl[i] + outbufr[i]) / 2);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (int_bytespersample == 1)
+                            {
+                                for (i = 0; i < endsamples; i++)
+                                {
+                                    data[pos + sndptr1++] = Clipit8(outbufl[i]);
+                                    data[pos + sndptr1++] = Clipit8(outbufr[i]);
+                                }
+                            }
+                            else
+                            {
+                                for (i = 0; i < endsamples; i++)
+                                {
+                                    data[pos + sndptr++] = Clipit16(outbufl[i]);
+                                    data[pos + sndptr++] = Clipit16(outbufr[i]);
+                                }
+                            }
+                        }
+                        continue;
                     }
                 }
 
@@ -1088,8 +1605,21 @@ namespace NScumm.Audio.OPL.Woody
         // be careful with this
         // uses cptr and chanval, outputs into outbufl(/outbufr)
         // for opl3 check if opl3-mode is enabled (which uses stereo panning)
-        private static void ChanVal(int[] outbufl, int i, int chanval)
+        private void ChanVal(int[] outbufl, int[] outbufr, int cptr, int i, int chanval)
         {
+            if (_type == OplType.Opl3)
+            {
+                if ((adlibreg[0x105] & 1) != 0)
+                {
+                    outbufl[i] += chanval * op[cptr].left_pan;
+                    outbufr[i] += chanval * op[cptr].right_pan;
+                }
+                else
+                {
+                    outbufl[i] += chanval;
+                }
+                return;
+            }
             outbufl[i] += chanval;
         }
     }

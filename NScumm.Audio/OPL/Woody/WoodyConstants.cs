@@ -23,9 +23,6 @@ namespace NScumm.Audio.OPL.Woody
 {
     internal static class WoodyConstants
     {
-        public const int NUM_CHANNELS = 9;
-        public const int MAXOPERATORS = NUM_CHANNELS * 2;
-
         public const double FL05 = 0.5;
         public const double FL2 = 2.0;
 
