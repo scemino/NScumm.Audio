@@ -20,9 +20,9 @@
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 using System;
-using NScumm.Audio.Players;
+using NScumm.Audio.OPL.Woody;
 using NScumm.Core.Audio.OPL;
-using NScumm.Core.Audio.OPL.DosBox;
+using NScumm.Audio.Players;
 
 namespace NScumm.Audio.AlPlayer
 {
@@ -38,7 +38,7 @@ namespace NScumm.Audio.AlPlayer
                 return -1;
             }
 
-            var opl = new DosBoxOPL(OplType.Opl2);
+            var opl = new WoodyEmulatorOpl();
             opl.Init(Rate);
 
             var players = Factory.GetPlayers(opl);
@@ -51,7 +51,7 @@ namespace NScumm.Audio.AlPlayer
                 alPlayer.Play();
 
                 Console.WriteLine("Hit a key to stop!");
-                Console.ReadKey();
+                Console.Read();
                 return 0;
             }
 

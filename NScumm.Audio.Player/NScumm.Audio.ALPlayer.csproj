@@ -15,8 +15,8 @@
     <PackageReference Include="OpenAL.NETCore" Version="1.0.1" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NScumm.Audio\NScumm.Audio.csproj" />
     <ProjectReference Include="..\NScumm.Audio.Players\NScumm.Audio.Players.csproj" />
+    <ProjectReference Include="..\NScumm.Audio\NScumm.Audio.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Player_AD.cs" />
