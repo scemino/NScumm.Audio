@@ -69,7 +69,7 @@ namespace NScumm.Audio.Players
         }
 
         private S3m_header _header;
-        private S3mPattern[,,] _pattern = new S3mPattern[99, 64, 32];
+        private S3mPattern[,,] _pattern;
         private S3mInst[] _inst;
         private S3mChannel[] _channel;
 
@@ -87,7 +87,25 @@ namespace NScumm.Audio.Players
 
             _channel = new S3mChannel[9];
             _orders = new byte[256];
+            for (int i = 0; i < _orders.Length; i++)
+            {
+                _orders[i] = 0xFF;
+            }
             _inst = new S3mInst[99];
+            _pattern = new S3mPattern[99, 64, 32];
+            for (int i = 0; i < 99; i++)
+            {
+                for (int j = 0; j < 64; j++)
+                {
+                    for (int k = 0; k < 32; k++)
+                    {
+                        _pattern[i, j, k].command = 0xFF;
+                        _pattern[i, j, k].note = 0xFF;
+                        _pattern[i, j, k].oct = 0xFF;
+                        _pattern[i, j, k].volume = 0xFF;
+                    }
+                }
+            }
         }
 
         public bool Load(string path)
