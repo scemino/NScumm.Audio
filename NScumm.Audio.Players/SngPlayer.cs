@@ -79,14 +79,13 @@ namespace NScumm.Audio.Players
                 // load section
                 header.length /= 2; header.start /= 2; header.loop /= 2;
                 data = new Sdata[header.length];
-                for (var i = 0; i < header.length && fs.Position < fs.Length-2; i++)
+                for (var i = 0; i < header.length && fs.Position < fs.Length - 2; i++)
                 {
                     data[i].val = br.ReadByte();
                     data[i].reg = br.ReadByte();
                 }
 
-                pos = header.start; del = header.delay; songend = false;
-                Opl.WriteReg(1, 32);	// go to OPL2 mode
+                Rewind(0);
                 return true;
             }
         }
@@ -116,6 +115,12 @@ namespace NScumm.Audio.Players
             if (data[pos].val != 0) del = (byte)(data[pos].val - 1); pos++;
             if (pos >= header.length) { songend = true; pos = header.loop; }
             return !songend;
+        }
+
+        private void Rewind(int subsong)
+        {
+            pos = header.start; del = header.delay; songend = false;
+            Opl.WriteReg(1, 32);	// go to OPL2 mode
         }
     }
 }

@@ -27,7 +27,7 @@ namespace NScumm.Audio.Players.Tests
                             continue;
 
                         // Output file information
-                        System.Console.WriteLine($"Testing {filename} with player {player}");
+                        System.Console.WriteLine($"Testing {Path.GetFileName(filename)} with player {player}");
 
                         // Write whole file to disk
                         while (player.Update())
@@ -41,5 +41,5 @@ namespace NScumm.Audio.Players.Tests
             }
         }
     }
-    
+
 }
