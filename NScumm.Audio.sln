@@ -1,7 +1,7 @@
 
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio.AlPlayer", "NScumm.Audio.Player\NScumm.Audio.ALPlayer.csproj", "{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio.ALPlayer", "NScumm.Audio.Player\NScumm.Audio.ALPlayer.csproj", "{81B6536E-79AB-4FE5-959E-FC5CF2E15D99}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A7D04B9-2124-44E3-927B-576DFC7BC2D6}"
 	ProjectSection(SolutionItems) = preProject
@@ -11,6 +11,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio.Players", "NScumm.Audio.Players\NScumm.Audio.Players.csproj", "{A2128435-325D-40FB-A664-20FAF77058F6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio", "NScumm.Audio\NScumm.Audio.csproj", "{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NScumm.Audio.Players.Tests", "NScumm.Audio.Players.Tests\NScumm.Audio.Players.Tests.csproj", "{74FF090F-5666-48F4-ADA5-98C7AB6A474C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,6 +32,10 @@ Global
 		{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1AEDFD10-8A8A-460F-84A2-56ACAD3A2FB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74FF090F-5666-48F4-ADA5-98C7AB6A474C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74FF090F-5666-48F4-ADA5-98C7AB6A474C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74FF090F-5666-48F4-ADA5-98C7AB6A474C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74FF090F-5666-48F4-ADA5-98C7AB6A474C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(MonoDevelopProperties) = preSolution
 		Policies = $0

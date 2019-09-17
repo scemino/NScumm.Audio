@@ -134,6 +134,7 @@ namespace NScumm.Audio.Players
                         }
                     }
                 }
+                Rewind(0);
                 return true;
             }
         }
@@ -144,26 +145,24 @@ namespace NScumm.Audio.Players
             {
                 int iIndex = _data[_pos++];
                 int iValue;
-                // Short delay
                 if (iIndex == iCmdDelayS)
                 {
+                    // Short delay
                     iValue = _data[_pos++];
                     _delay = iValue + 1;
                     return true;
-
-                    // Long delay
                 }
                 if (iIndex == iCmdDelayL)
                 {
+                    // Long delay
                     iValue = _data[_pos] | (_data[_pos + 1] << 8);
                     _pos += 2;
                     _delay = (iValue + 1);
                     return true;
-
-                    // Bank switching
                 }
                 else if (iIndex == 0x02 || iIndex == 0x03)
                 {
+                    // Bank switching
                     // TODO:?
                     //_opl.SetChip(iIndex - 0x02);
 
@@ -183,6 +182,27 @@ namespace NScumm.Audio.Players
             // This won't result in endless-play using Adplay, but IMHO that code belongs
             // in Adplay itself, not here.
             return _pos < _data.Length;
+        }
+
+        private void Rewind(int subsong)
+        {
+            _delay = 0;
+            _pos = 0;
+
+            // DRO v1 assumes all registers are initialized to 0.
+            // Registers not initialized to 0 will be corrected
+            //  in the data stream.
+            // opl->setchip(0);
+            for(var i = 0; i < 256; i++) {
+                Opl.WriteReg(i, 0);
+            }
+            
+            // opl->setchip(1);
+            for(var i = 0; i < 256; i++) {
+                Opl.WriteReg(i, 0);
+            }
+
+            // opl->setchip(0);
         }
     }
 }
