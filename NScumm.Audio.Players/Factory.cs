@@ -29,6 +29,7 @@ namespace NScumm.Audio.Players
         {
             return new IMusicPlayer[]
             {
+                new CmfPlayer(opl),
                 new MidPlayer(opl),
                 new DroPlayer(opl),
                 new ImfPlayer(opl),
