@@ -11,11 +11,13 @@ namespace NScumm.Audio.Players.Tests
             var directory = Path.Combine(System.AppDomain.CurrentDomain.BaseDirectory, "../../../test");
             foreach (var filename in Directory.EnumerateFiles(directory))
             {
-                if(Path.GetFileName(filename).StartsWith('.')) continue;
+                if (Path.GetFileName(filename).StartsWith('.')) continue;
                 var ext = Path.GetExtension(filename);
                 if (string.Equals(ext, ".test", System.StringComparison.OrdinalIgnoreCase))
                     continue;
                 if (string.Equals(ext, ".ref", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (string.Equals(ext, ".003", System.StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var testFilename = Path.ChangeExtension(filename, ".test");
