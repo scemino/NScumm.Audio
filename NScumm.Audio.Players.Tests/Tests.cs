@@ -19,6 +19,8 @@ namespace NScumm.Audio.Players.Tests
                     continue;
                 if (string.Equals(ext, ".003", System.StringComparison.OrdinalIgnoreCase))
                     continue;
+                if (string.Equals(ext, ".dat", System.StringComparison.OrdinalIgnoreCase))
+                    continue;
 
                 var testFilename = Path.ChangeExtension(filename, ".test");
                 using (var opl = new Testopl(testFilename))

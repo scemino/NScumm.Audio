@@ -1,5 +1,5 @@
 //
-//  MidPlayer.cs
+//  CmfPlayer.cs
 //
 //  Author:
 //       scemino <scemino74@gmail.com>
