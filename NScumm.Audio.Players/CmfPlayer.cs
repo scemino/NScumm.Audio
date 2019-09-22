@@ -26,6 +26,11 @@ using NScumm.Core.Audio.OPL;
 
 namespace NScumm.Audio.Players
 {
+    /// <summary>
+    /// CMF player by Adam Nielsen malvineous@shikadi.net
+    ///   Subset of CMF reader in MOPL code (Malvineous' OPL player), no seeking etc.
+    /// This code has been adapted from adplug https://github.com/adplug/adplug
+    /// </summary>
     internal sealed class CmfPlayer : IMusicPlayer
     {
         struct CMFHEADER

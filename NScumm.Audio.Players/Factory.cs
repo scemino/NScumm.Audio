@@ -37,6 +37,7 @@ namespace NScumm.Audio.Players
                 new SngPlayer(opl),
                 new XsmPlayer(opl),
                 new S3mPlayer(opl),
+                new AdlPlayer(opl),
             };
         }
     }

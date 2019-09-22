@@ -25,6 +25,10 @@ using NScumm.Core.Audio.OPL;
 
 namespace NScumm.Audio.Players
 {
+    /// <summary>
+    /// KSM Player for AdPlug by Simon Peter dn.tlp@gmx.net
+    /// This code has been adapted from adplug https://github.com/adplug/adplug
+    /// </summary>
     internal sealed class KsmPlayer : IMusicPlayer
     {
         private static readonly uint[] adlibfreq = {
