@@ -1,4 +1,6 @@
 # NScumm.Audio
+[![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![Build status](https://ci.appveyor.com/api/projects/status/x8we7f55wpdepu6c?svg=true)](https://ci.appveyor.com/project/scemino/nscumm-audio)
 
 **NScumm.Audio** is a pure C# library, it contains these OPL emulators:
 
@@ -27,3 +29,13 @@
 * SCI: Sierra's AdLib Audio File Format
 * SNG: Adlib Tracker 1.0 by TJ
 * XSM: eXtra Simple Music by Davey W Taylor
+
+## License
+
+DosBox OPL3 emulator is licensed under GPL v2+.
+
+WoodyOPL from the DOSBox team is licensed under LGPL v2.1.
+
+AdPlug is licensed under LGPL v2.1.
+
+Mono.Options is licensed under the MIT License (MIT).
