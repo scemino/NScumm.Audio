@@ -17,6 +17,7 @@
 * BMF: Easy AdLib 1.0 by The Brain
 * CMF: Creative Music File Format by Creative Technology
 * DRO: DOSBox Raw OPL Format
+* HSC: HSC Adlib Composer by Hannes Seifert, HSC-Tracker by Electronic Rats
 * IMF: Apogee IMF File Format
 * KSM: Ken Silverman's Music Format
 * LAA: LucasArts AdLib Audio File Format by LucasArts
