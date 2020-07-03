@@ -1,0 +1,52 @@
+name: .NET Core
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.101
+    - name: Build for Windows
+      run: dotnet publish -r win-x64 --configuration Release
+    - name: Build for Linux
+      run: dotnet publish -r linux-x64 --configuration Release
+    - name: Build for macOS
+      run: dotnet publish -r osx-x64 --configuration Release
+    - name: Upload artifact - Windows
+      uses: actions/upload-artifact@v2
+      with:
+        name: ALPlayer-win-x64
+        path: NScumm.Audio.Player/bin/Release/netcoreapp3.0/win-x64/publish/*
+    - name: Upload artifact - Linux
+      uses: actions/upload-artifact@v2
+      with:
+        name: ALPlayer-linux-x64
+        path: NScumm.Audio.Player/bin/Release/netcoreapp3.0/linux-x64/publish/*
+    - name: Upload artifact - macOS
+      uses: actions/upload-artifact@v2
+      with:
+        name: ALPlayer-osx-x64
+        path: NScumm.Audio.Player/bin/Release/netcoreapp3.0/osx-x64/publish/*
+    - name: Test
+      run: dotnet test --verbosity normal
+    - name: Make Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          NScumm.Audio.Player/bin/Release/netcoreapp3.0/linux-x64/publish/*
+          NScumm.Audio.Player/bin/Release/netcoreapp3.0/win-x64/publish/*
+          NScumm.Audio.Player/bin/Release/netcoreapp3.0/osx-x64/publish/*
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
