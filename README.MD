@@ -1,6 +1,5 @@
 # NScumm.Audio
 [![License: GPL v3](https://img.shields.io/badge/License-GPL%20v3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![Build status](https://ci.appveyor.com/api/projects/status/x8we7f55wpdepu6c?svg=true)](https://ci.appveyor.com/project/scemino/nscumm-audio)
 ![.NET Core](https://github.com/scemino/NScumm.Audio/workflows/.NET%20Core/badge.svg)
 
 **NScumm.Audio** is a pure C# library, it contains these OPL emulators:
