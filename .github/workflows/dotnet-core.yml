@@ -1,16 +1,11 @@
 name: .NET Core
 
-on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
+on: push
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
+    name: Build
     steps:
     - uses: actions/checkout@v2
     - name: Setup .NET Core
@@ -40,13 +35,15 @@ jobs:
         path: NScumm.Audio.Player/bin/Release/netcoreapp3.0/osx-x64/publish/*
     - name: Test
       run: dotnet test --verbosity normal
-    - name: Make Release
+    - name: Upload Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
+        draft: true
+        prerelease: true
         files: |
           NScumm.Audio.Player/bin/Release/netcoreapp3.0/linux-x64/publish/*
           NScumm.Audio.Player/bin/Release/netcoreapp3.0/win-x64/publish/*
           NScumm.Audio.Player/bin/Release/netcoreapp3.0/osx-x64/publish/*
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

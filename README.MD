@@ -10,6 +10,7 @@
 **NScumm.Audio.Players** is a C# library containing several players decoding different adlib music formats (see Supported formats).
 
 **NScumm.Audio.Player** is a small console frontend, it uses these libraries to play adlib musics.
+You will be able to download it soon.
 
 ## Supported formats
 

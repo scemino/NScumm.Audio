@@ -352,3 +352,4 @@ MigrationBackup/
 .ionide/
 
 *.test
+.DS_Store
