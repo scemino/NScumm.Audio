@@ -179,47 +179,60 @@ namespace NScumm.Audio.Players
         {
             using (var fs = File.OpenRead(path))
             {
-                var br = new BinaryReader(fs);
-                var s = br.ReadBytes(6);
-                int good = 0;
-                subsongs = 0;
-                switch (s[0])
-                {
-                    case (byte)'A':
-                        if (s[1] == 'D' && s[2] == 'L') good = FILE_LUCAS;
-                        break;
-                    case (byte)'M':
-                        if (s[1] == 'T' && s[2] == 'h' && s[3] == 'd') good = FILE_MIDI;
-                        break;
-                    case (byte)'C':
-                        if (s[1] == 'T' && s[2] == 'M' && s[3] == 'F') good = FILE_CMF;
-                        break;
-                    case 0x84:
-                        if (s[1] == 0x00 && load_sierra_ins(path))
-                        {
-                            if (s[2] == 0xf0)
-                                good = FILE_ADVSIERRA;
-                            else
-                                good = FILE_SIERRA;
-                        }
-                        break;
-                    default:
-                        fs.Seek(0, SeekOrigin.Begin);
-                        var size = br.ReadUInt32(); // size of FILE_OLDLUCAS
-                        if (size == fs.Length && s[4] == 'A' && s[5] == 'D') good = FILE_OLDLUCAS;
-                        break;
-                }
-                if (good == 0) return false;
-                subsongs = 1;
-
-                type = good;
-                fs.Seek(0, SeekOrigin.Begin);
-                flen = fs.Length;
-                data = br.ReadBytes((int)flen);
-
-                Rewind(0);
-                return true;
+                return Load(fs);
             }
+        }
+
+        public bool Load(Stream stream)
+        {
+            var br = new BinaryReader(stream);
+            var s = br.ReadBytes(6);
+            int good = 0;
+            subsongs = 0;
+            switch (s[0])
+            {
+                case (byte)'A':
+                    if (s[1] == 'D' && s[2] == 'L') good = FILE_LUCAS;
+                    break;
+                case (byte)'M':
+                    if (s[1] == 'T' && s[2] == 'h' && s[3] == 'd') good = FILE_MIDI;
+                    break;
+                case (byte)'C':
+                    if (s[1] == 'T' && s[2] == 'M' && s[3] == 'F') good = FILE_CMF;
+                    break;
+                case 0x84:
+                    if (s[1] == 0x00)
+                    {
+                        var fs = stream as FileStream;
+                        if (fs == null)
+                        {
+                            AdPlug_LogWrite("Couldn't open instruments for Mid from a pure stream! Aborting!\n");
+                            return false;
+                        }
+                        load_sierra_ins(fs.Name);
+
+                        if (s[2] == 0xf0)
+                            good = FILE_ADVSIERRA;
+                        else
+                            good = FILE_SIERRA;
+                    }
+                    break;
+                default:
+                    stream.Seek(0, SeekOrigin.Begin);
+                    var size = br.ReadUInt32(); // size of FILE_OLDLUCAS
+                    if (size == stream.Length && s[4] == 'A' && s[5] == 'D') good = FILE_OLDLUCAS;
+                    break;
+            }
+            if (good == 0) return false;
+            subsongs = 1;
+
+            type = good;
+            stream.Seek(0, SeekOrigin.Begin);
+            flen = stream.Length;
+            data = br.ReadBytes((int)flen);
+
+            Rewind(0);
+            return true;
         }
 
         public bool Update()
@@ -1149,6 +1162,11 @@ namespace NScumm.Audio.Players
 
         private void midiprintf(string format, params object[] parameters)
         {
+        }
+
+        private void AdPlug_LogWrite(string message)
+        {
+            Console.Error.WriteLine(message);
         }
     }
 }

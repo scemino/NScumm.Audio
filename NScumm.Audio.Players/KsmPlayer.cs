@@ -72,44 +72,55 @@ namespace NScumm.Audio.Players
             }
             using (var fs = File.OpenRead(path))
             {
-                var br = new BinaryReader(fs);
-                AdPlug_LogWrite($"*** CksmPlayer::load(,\"{path}\") ***\n");
-
-                // Load instruments from 'insts.dat'
-                var fn = Path.Combine(Path.GetDirectoryName(path), "insts.dat");
-                if (!File.Exists(fn))
-                {
-                    AdPlug_LogWrite("Couldn't open instruments file! Aborting!\n");
-                    AdPlug_LogWrite("--- CksmPlayer::load ---\n");
-                    return false;
-                }
-                AdPlug_LogWrite("Instruments file: \"{fn}\"\n");
-                loadinsts(fn);
-
-                for (var i = 0; i < 16; i++) trinst[i] = br.ReadByte();
-                for (var i = 0; i < 16; i++) trquant[i] = br.ReadByte();
-                for (var i = 0; i < 16; i++) trchan[i] = br.ReadByte();
-                fs.Seek(16, SeekOrigin.Current);
-                for (var i = 0; i < 16; i++) trvol[i] = br.ReadByte();
-                numnotes = br.ReadUInt16();
-                note = new int[numnotes];
-                for (var i = 0; i < numnotes; i++) note[i] = br.ReadInt32();
-
-                if (trchan[11] == 0)
-                {
-                    drumstat = 0;
-                    numchans = 9;
-                }
-                else
-                {
-                    drumstat = 32;
-                    numchans = 6;
-                }
-
-                Rewind(0);
-                AdPlug_LogWrite("--- CksmPlayer::load ---\n");
-                return true;
+                return Load(fs);
             }
+        }
+
+        public bool Load(Stream stream)
+        {
+            var br = new BinaryReader(stream);
+            AdPlug_LogWrite($"*** CksmPlayer::load ***\n");
+
+            // Load instruments from 'insts.dat'
+            var fs = stream as FileStream;
+            if (fs == null)
+            {
+                AdPlug_LogWrite("Couldn't open instruments for Ksm from a pure stream! Aborting!\n");
+                return false;
+            }
+            var fn = Path.Combine(Path.GetDirectoryName(fs.Name), "insts.dat");
+            if (!File.Exists(fn))
+            {
+                AdPlug_LogWrite("Couldn't open instruments file! Aborting!\n");
+                AdPlug_LogWrite("--- CksmPlayer::load ---\n");
+                return false;
+            }
+            AdPlug_LogWrite($"Instruments file: \"{fn}\"\n");
+            loadinsts(fn);
+
+            for (var i = 0; i < 16; i++) trinst[i] = br.ReadByte();
+            for (var i = 0; i < 16; i++) trquant[i] = br.ReadByte();
+            for (var i = 0; i < 16; i++) trchan[i] = br.ReadByte();
+            stream.Seek(16, SeekOrigin.Current);
+            for (var i = 0; i < 16; i++) trvol[i] = br.ReadByte();
+            numnotes = br.ReadUInt16();
+            note = new int[numnotes];
+            for (var i = 0; i < numnotes; i++) note[i] = br.ReadInt32();
+
+            if (trchan[11] == 0)
+            {
+                drumstat = 0;
+                numchans = 9;
+            }
+            else
+            {
+                drumstat = 32;
+                numchans = 6;
+            }
+
+            Rewind(0);
+            AdPlug_LogWrite("--- CksmPlayer::load ---\n");
+            return true;
         }
 
         public bool Update()
@@ -339,14 +350,15 @@ namespace NScumm.Audio.Players
                 for (var i = 0; i < 256; i++)
                 {
                     instname[i] = new string(br.ReadChars(20));
-                    for (var j = 0; j < 11; j++) inst[i,j] = br.ReadByte();
+                    for (var j = 0; j < 11; j++) inst[i, j] = br.ReadByte();
                     fs.Seek(2, SeekOrigin.Current);
                 }
             }
         }
 
-        private void AdPlug_LogWrite(string fmt, params object[] parameters)
+        private void AdPlug_LogWrite(string message)
         {
+            Console.Error.WriteLine(message);
         }
     }
 }
