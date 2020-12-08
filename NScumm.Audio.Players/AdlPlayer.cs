@@ -60,119 +60,124 @@ namespace NScumm.Audio.Players
             {
                 return false;
             }
-            Init();
             using (var fs = File.OpenRead(path))
             {
-                if (fs.Length < 720) return false;
+                return Load(fs);
+            }
+        }
 
-                unk2();
-                unk1();
+        public bool Load(Stream stream)
+        {
+            Init();
+            if (stream.Length < 720) return false;
 
-                // detect format version
-                var br = new BinaryReader(fs);
-                _version = 3; // assuming we have v3
-                for (int i = 0; i < 120; i += 2)
+            unk2();
+            unk1();
+
+            // detect format version
+            var br = new BinaryReader(stream);
+            _version = 3; // assuming we have v3
+            for (int i = 0; i < 120; i += 2)
+            {
+                ushort w = br.ReadUInt16();
+                // all entries should be in range 0..500-1 or 0xFFFF
+                if (w >= 500 && w < 0xffff)
+                {
+                    _version = 1; // actually 1 or 2
+                    break;
+                }
+            }
+            if (_version == 1)
+            { // detect whether v1 or v2
+                stream.Seek(120, SeekOrigin.Begin);
+                _version = 2; // assuming we have v2
+                for (int i = 0; i < 150; i += 2)
                 {
                     ushort w = br.ReadUInt16();
-                    // all entries should be in range 0..500-1 or 0xFFFF
-                    if (w >= 500 && w < 0xffff)
-                    {
-                        _version = 1; // actually 1 or 2
-                        break;
+                    if (w > 0 && w < 600)
+                    { // minimum track offset for v1 is 600
+                        return false;
                     }
+                    // minimum track offset for v2 is 1000
+                    if (w > 0 && w < 1000)
+                        _version = 1;
                 }
-                if (_version == 1)
-                { // detect whether v1 or v2
-                    fs.Seek(120, SeekOrigin.Begin);
-                    _version = 2; // assuming we have v2
-                    for (int i = 0; i < 150; i += 2)
-                    {
-                        ushort w = br.ReadUInt16();
-                        if (w > 0 && w < 600)
-                        { // minimum track offset for v1 is 600
-                            return false;
-                        }
-                        // minimum track offset for v2 is 1000
-                        if (w > 0 && w < 1000)
-                            _version = 1;
-                    }
-                }
-                if (_version == 2 && fs.Length < 1120)
-                { // minimum file size of v2
-                    return false;
-                }
-                if (_version == 3 && fs.Length < 2500)
-                { // minimum file size of v3
-                    return false;
-                }
-
-                fs.Seek(0, SeekOrigin.Begin);
-                var file_size = (int)fs.Length;
-
-                _driver.snd_unkOpcode3(-1);
-                _soundDataPtr = null;
-
-                ushort _EntriesSize;
-                if (_version < 3)
-                {
-                    _EntriesSize = 120;
-                    _trackEntries = br.ReadBytes(_EntriesSize);
-                }
-                else
-                {
-                    _EntriesSize = 250 * 2;
-                    for (int i = 0; i < 250; i++)
-                    {
-                        _trackEntries16[i] = br.ReadUInt16();
-                    }
-                }
-
-                int soundDataSize = file_size - _EntriesSize;
-
-                _soundDataPtr = br.ReadBytes(soundDataSize);
-
-                file_size = 0;
-
-                _driver.snd_setSoundData(_soundDataPtr);
-
-                // 	_soundFileLoaded = file;
-
-                // find last subsong
-                ushort maxEntry = 0xffff;
-                switch (_version)
-                {
-                    case 1:
-                        maxEntry = 150 - 1;
-                        break;
-                    case 2:
-                        maxEntry = 250 - 1;
-                        break;
-                    case 3:
-                        maxEntry = 500 - 1;
-                        break;
-                }
-                if (_version < 3)
-                {
-                    for (int i = 120 - 1; i >= 0; i--)
-                        if (_trackEntries[i] <= maxEntry)
-                        {
-                            numsubsongs = i + 1;
-                            break;
-                        }
-                }
-                else
-                {
-                    for (int i = 250 - 1; i >= 0; i--)
-                        if (_trackEntries16[i] <= maxEntry)
-                        {
-                            numsubsongs = i + 1;
-                            break;
-                        }
-                }
-
-                cursubsong = -1;
-                return true;
             }
+            if (_version == 2 && stream.Length < 1120)
+            { // minimum file size of v2
+                return false;
+            }
+            if (_version == 3 && stream.Length < 2500)
+            { // minimum file size of v3
+                return false;
+            }
+
+            stream.Seek(0, SeekOrigin.Begin);
+            var file_size = (int)stream.Length;
+
+            _driver.snd_unkOpcode3(-1);
+            _soundDataPtr = null;
+
+            ushort _EntriesSize;
+            if (_version < 3)
+            {
+                _EntriesSize = 120;
+                _trackEntries = br.ReadBytes(_EntriesSize);
+            }
+            else
+            {
+                _EntriesSize = 250 * 2;
+                for (int i = 0; i < 250; i++)
+                {
+                    _trackEntries16[i] = br.ReadUInt16();
+                }
+            }
+
+            int soundDataSize = file_size - _EntriesSize;
+
+            _soundDataPtr = br.ReadBytes(soundDataSize);
+
+            file_size = 0;
+
+            _driver.snd_setSoundData(_soundDataPtr);
+
+            // 	_soundFileLoaded = file;
+
+            // find last subsong
+            ushort maxEntry = 0xffff;
+            switch (_version)
+            {
+                case 1:
+                    maxEntry = 150 - 1;
+                    break;
+                case 2:
+                    maxEntry = 250 - 1;
+                    break;
+                case 3:
+                    maxEntry = 500 - 1;
+                    break;
+            }
+            if (_version < 3)
+            {
+                for (int i = 120 - 1; i >= 0; i--)
+                    if (_trackEntries[i] <= maxEntry)
+                    {
+                        numsubsongs = i + 1;
+                        break;
+                    }
+            }
+            else
+            {
+                for (int i = 250 - 1; i >= 0; i--)
+                    if (_trackEntries16[i] <= maxEntry)
+                    {
+                        numsubsongs = i + 1;
+                        break;
+                    }
+            }
+
+            cursubsong = -1;
+            return true;
         }
 
         public bool Update()

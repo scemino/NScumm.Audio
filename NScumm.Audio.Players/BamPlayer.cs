@@ -67,9 +67,16 @@ namespace NScumm.Audio.Players
         public bool Load(string path)
         {
             using (var fs = File.OpenRead(path))
-            using (var br = new BinaryReader(fs))
             {
-                size = fs.Length - 4;
+                return Load(fs);
+            }
+        }
+
+        public bool Load(Stream stream)
+        {
+            using (var br = new BinaryReader(stream))
+            {
+                size = stream.Length - 4;
                 var id = new string(br.ReadChars(4));
                 if (!string.Equals(id, "CBMF", StringComparison.OrdinalIgnoreCase)) return false;
 

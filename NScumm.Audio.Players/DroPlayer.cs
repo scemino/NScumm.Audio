@@ -31,7 +31,7 @@ namespace NScumm.Audio.Players
     /// DOSBox Raw OPL Player by Sjoerd van der Berg harekiet@zophar.net
     /// This code has been adapted from adplug https://github.com/adplug/adplug
     /// </summary>
-    internal sealed class DroPlayer: IMusicPlayer
+    internal sealed class DroPlayer : IMusicPlayer
     {
         private const byte iCmdDelayS = 0x00;
         private const byte iCmdDelayL = 0x01;
@@ -61,82 +61,87 @@ namespace NScumm.Audio.Players
         {
             using (var fs = File.OpenRead(path))
             {
-                var br = new BinaryReader(fs);
-                var id = new string(br.ReadChars(8));
-                if (id != "DBRAWOPL") return false;
+                return Load(fs);
+            }
+        }
 
-                var version = br.ReadInt32();
-                if (version != 0x10000) return false;
+        public bool Load(Stream stream)
+        {
+            var br = new BinaryReader(stream);
+            var id = new string(br.ReadChars(8));
+            if (id != "DBRAWOPL") return false;
 
-                var lengthInMs = br.ReadInt32();
-                var length = br.ReadInt32();
-                _data = new byte[length];
+            var version = br.ReadInt32();
+            if (version != 0x10000) return false;
 
-                // Some early .DRO files only used one byte for the hardware type, then
-                // later changed to four bytes with no version number change.
-                // OPL type (0 == OPL2, 1 == OPL3, 2 == Dual OPL2)
-                br.ReadChar();   // Type of opl data this can contain - ignored
-                int i;
-                for (i = 0; i < 3; i++)
+            var lengthInMs = br.ReadInt32();
+            var length = br.ReadInt32();
+            _data = new byte[length];
+
+            // Some early .DRO files only used one byte for the hardware type, then
+            // later changed to four bytes with no version number change.
+            // OPL type (0 == OPL2, 1 == OPL3, 2 == Dual OPL2)
+            br.ReadChar();   // Type of opl data this can contain - ignored
+            int i;
+            for (i = 0; i < 3; i++)
+            {
+                _data[i] = br.ReadByte();
+            }
+
+            if (_data[0] == 0 || _data[1] == 0 || _data[2] == 0)
+            {
+                // If we're here then this is a later (more popular) file with
+                // the full four bytes for the hardware-type.
+                i = 0; // so ignore the three bytes we just read and start again
+            }
+
+            // Read the OPL data.
+            br.BaseStream.Read(_data, i, length - i);
+
+            var tagsize = stream.Length - stream.Position;
+            if (tagsize >= 3)
+            {
+                // The arbitrary Tag Data section begins here.
+                if (br.ReadByte() != 0xFF ||
+                    br.ReadByte() != 0xFF ||
+                    br.ReadByte() != 0x1A)
                 {
-                    _data[i] = br.ReadByte();
+                    // Tag data does not present or truncated.
+                    return true;
                 }
 
-                if (_data[0] == 0 || _data[1] == 0 || _data[2] == 0)
+                // "title" is maximum 40 characters long.
+                var title = new StringBuilder();
+                char c;
+                while ((c = br.ReadChar()) != 0)
                 {
-                    // If we're here then this is a later (more popular) file with
-                    // the full four bytes for the hardware-type.
-                    i = 0; // so ignore the three bytes we just read and start again
+                    title.Append(c);
                 }
 
-                // Read the OPL data.
-                br.BaseStream.Read(_data, i, length - i);
-
-                var tagsize = fs.Length - fs.Position;
-                if (tagsize >= 3)
+                // "author" Tag marker byte is present ?
+                if (br.ReadByte() == 0x1B)
                 {
-                    // The arbitrary Tag Data section begins here.
-                    if (br.ReadByte() != 0xFF ||
-                        br.ReadByte() != 0xFF ||
-                        br.ReadByte() != 0x1A)
-                    {
-                        // Tag data does not present or truncated.
-                        return true;
-                    }
-
-                    // "title" is maximum 40 characters long.
-                    var title = new StringBuilder();
-                    char c;
+                    // "author" is maximum 40 characters long.
+                    var author = new StringBuilder();
                     while ((c = br.ReadChar()) != 0)
                     {
-                        title.Append(c);
-                    }
-
-                    // "author" Tag marker byte is present ?
-                    if (br.ReadByte() == 0x1B)
-                    {
-                        // "author" is maximum 40 characters long.
-                        var author = new StringBuilder();
-                        while ((c = br.ReadChar()) != 0)
-                        {
-                            author.Append(c);
-                        }
-                    }
-
-                    // "desc" Tag marker byte is present..
-                    if (br.ReadByte() == 0x1C)
-                    {
-                        // "desc" is now maximum 1023 characters long (it was 140).
-                        var desc = new StringBuilder();
-                        while ((c = br.ReadChar()) != 0)
-                        {
-                            desc.Append(c);
-                        }
+                        author.Append(c);
                     }
                 }
-                Rewind(0);
-                return true;
+
+                // "desc" Tag marker byte is present..
+                if (br.ReadByte() == 0x1C)
+                {
+                    // "desc" is now maximum 1023 characters long (it was 140).
+                    var desc = new StringBuilder();
+                    while ((c = br.ReadChar()) != 0)
+                    {
+                        desc.Append(c);
+                    }
+                }
             }
+            Rewind(0);
+            return true;
         }
 
         public bool Update()
@@ -193,12 +198,14 @@ namespace NScumm.Audio.Players
             // Registers not initialized to 0 will be corrected
             //  in the data stream.
             // opl->setchip(0);
-            for(var i = 0; i < 256; i++) {
+            for (var i = 0; i < 256; i++)
+            {
                 Opl.WriteReg(i, 0);
             }
-            
+
             // opl->setchip(1);
-            for(var i = 0; i < 256; i++) {
+            for (var i = 0; i < 256; i++)
+            {
                 Opl.WriteReg(i, 0);
             }
 

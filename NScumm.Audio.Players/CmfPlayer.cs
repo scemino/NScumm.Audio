@@ -163,117 +163,122 @@ namespace NScumm.Audio.Players
         {
             using (var fs = File.OpenRead(path))
             {
-                var br = new BinaryReader(fs);
-                var cSig = new string(br.ReadChars(4));
-                if (cSig != "CTMF")
-                {
-                    // Not a CMF file
-                    return false;
-                }
-
-                ushort iVer = br.ReadUInt16();
-                if ((iVer != 0x0101) && (iVer != 0x0100))
-                {
-                    Console.Error.WriteLine($"CMF file is not v1.0 or v1.1 (reports {iVer >> 8}.{iVer & 0xFF})");
-                    return false;
-                }
-
-                cmfHeader.iInstrumentBlockOffset = br.ReadUInt16();
-                cmfHeader.iMusicOffset = br.ReadUInt16();
-                cmfHeader.iTicksPerQuarterNote = br.ReadUInt16();
-                cmfHeader.iTicksPerSecond = br.ReadUInt16();
-                cmfHeader.iTagOffsetTitle = br.ReadUInt16();
-                cmfHeader.iTagOffsetComposer = br.ReadUInt16();
-                cmfHeader.iTagOffsetRemarks = br.ReadUInt16();
-
-                // This checks will fix crash for a lot of broken files
-                // Title, Composer and Remarks blocks usually located before Instrument block
-                // But if not this will indicate invalid offset value (sometimes even bigger than filesize)
-                if (cmfHeader.iTagOffsetTitle >= cmfHeader.iInstrumentBlockOffset)
-                    cmfHeader.iTagOffsetTitle = 0;
-                if (cmfHeader.iTagOffsetComposer >= cmfHeader.iInstrumentBlockOffset)
-                    cmfHeader.iTagOffsetComposer = 0;
-                if (cmfHeader.iTagOffsetRemarks >= cmfHeader.iInstrumentBlockOffset)
-                    cmfHeader.iTagOffsetRemarks = 0;
-
-                cmfHeader.iChannelsInUse = br.ReadBytes(16);
-                if (iVer == 0x0100)
-                {
-                    cmfHeader.iNumInstruments = br.ReadByte();
-                    cmfHeader.iTempo = 0;
-                }
-                else
-                { // 0x0101
-                    cmfHeader.iNumInstruments = br.ReadUInt16();
-                    cmfHeader.iTempo = br.ReadUInt16();
-                }
-
-                // Load the instruments
-
-                fs.Seek(cmfHeader.iInstrumentBlockOffset, SeekOrigin.Begin);
-                pInstruments = new SBI[
-                  (cmfHeader.iNumInstruments < 128) ? 128 : cmfHeader.iNumInstruments
-                ];  // Always at least 128 available for use
-
-                for (int i = 0; i < cmfHeader.iNumInstruments; i++)
-                {
-                    pInstruments[i].op = new OPERATOR[2];
-                    pInstruments[i].op[0].iCharMult = br.ReadByte();
-                    pInstruments[i].op[1].iCharMult = br.ReadByte();
-                    pInstruments[i].op[0].iScalingOutput = br.ReadByte();
-                    pInstruments[i].op[1].iScalingOutput = br.ReadByte();
-                    pInstruments[i].op[0].iAttackDecay = br.ReadByte();
-                    pInstruments[i].op[1].iAttackDecay = br.ReadByte();
-                    pInstruments[i].op[0].iSustainRelease = br.ReadByte();
-                    pInstruments[i].op[1].iSustainRelease = br.ReadByte();
-                    pInstruments[i].op[0].iWaveSel = br.ReadByte();
-                    pInstruments[i].op[1].iWaveSel = br.ReadByte();
-                    pInstruments[i].iConnection = br.ReadByte();
-                    fs.Seek(5, SeekOrigin.Current);  // skip over the padding bytes
-                }
-
-                // Set the rest of the instruments to the CMF defaults
-                for (int i = cmfHeader.iNumInstruments; i < 128; i++)
-                {
-                    pInstruments[i].op = new OPERATOR[2];
-                    pInstruments[i].op[0].iCharMult = cDefaultPatches[(i % 16) * 11 + 0];
-                    pInstruments[i].op[1].iCharMult = cDefaultPatches[(i % 16) * 11 + 1];
-                    pInstruments[i].op[0].iScalingOutput = cDefaultPatches[(i % 16) * 11 + 2];
-                    pInstruments[i].op[1].iScalingOutput = cDefaultPatches[(i % 16) * 11 + 3];
-                    pInstruments[i].op[0].iAttackDecay = cDefaultPatches[(i % 16) * 11 + 4];
-                    pInstruments[i].op[1].iAttackDecay = cDefaultPatches[(i % 16) * 11 + 5];
-                    pInstruments[i].op[0].iSustainRelease = cDefaultPatches[(i % 16) * 11 + 6];
-                    pInstruments[i].op[1].iSustainRelease = cDefaultPatches[(i % 16) * 11 + 7];
-                    pInstruments[i].op[0].iWaveSel = cDefaultPatches[(i % 16) * 11 + 8];
-                    pInstruments[i].op[1].iWaveSel = cDefaultPatches[(i % 16) * 11 + 9];
-                    pInstruments[i].iConnection = cDefaultPatches[(i % 16) * 11 + 10];
-                }
-
-                if (cmfHeader.iTagOffsetTitle != 0)
-                {
-                    fs.Seek(cmfHeader.iTagOffsetTitle, SeekOrigin.Begin);
-                    strTitle = ReadString(br);
-                }
-                if (cmfHeader.iTagOffsetComposer != 0)
-                {
-                    fs.Seek(cmfHeader.iTagOffsetComposer, SeekOrigin.Begin);
-                    strComposer = ReadString(br);
-                }
-                if (cmfHeader.iTagOffsetRemarks != 0)
-                {
-                    fs.Seek(cmfHeader.iTagOffsetRemarks, SeekOrigin.Begin);
-                    strRemarks = ReadString(br);
-                }
-
-                // Load the MIDI data into memory
-                fs.Seek(cmfHeader.iMusicOffset, SeekOrigin.Begin);
-                iSongLen = (int)(fs.Length - cmfHeader.iMusicOffset);
-                data = br.ReadBytes(iSongLen);
-
-                Rewind(0);
-
-                return true;
+                return Load(fs);
             }
+        }
+
+        public bool Load(Stream stream)
+        {
+            var br = new BinaryReader(stream);
+            var cSig = new string(br.ReadChars(4));
+            if (cSig != "CTMF")
+            {
+                // Not a CMF file
+                return false;
+            }
+
+            ushort iVer = br.ReadUInt16();
+            if ((iVer != 0x0101) && (iVer != 0x0100))
+            {
+                Console.Error.WriteLine($"CMF file is not v1.0 or v1.1 (reports {iVer >> 8}.{iVer & 0xFF})");
+                return false;
+            }
+
+            cmfHeader.iInstrumentBlockOffset = br.ReadUInt16();
+            cmfHeader.iMusicOffset = br.ReadUInt16();
+            cmfHeader.iTicksPerQuarterNote = br.ReadUInt16();
+            cmfHeader.iTicksPerSecond = br.ReadUInt16();
+            cmfHeader.iTagOffsetTitle = br.ReadUInt16();
+            cmfHeader.iTagOffsetComposer = br.ReadUInt16();
+            cmfHeader.iTagOffsetRemarks = br.ReadUInt16();
+
+            // This checks will fix crash for a lot of broken files
+            // Title, Composer and Remarks blocks usually located before Instrument block
+            // But if not this will indicate invalid offset value (sometimes even bigger than filesize)
+            if (cmfHeader.iTagOffsetTitle >= cmfHeader.iInstrumentBlockOffset)
+                cmfHeader.iTagOffsetTitle = 0;
+            if (cmfHeader.iTagOffsetComposer >= cmfHeader.iInstrumentBlockOffset)
+                cmfHeader.iTagOffsetComposer = 0;
+            if (cmfHeader.iTagOffsetRemarks >= cmfHeader.iInstrumentBlockOffset)
+                cmfHeader.iTagOffsetRemarks = 0;
+
+            cmfHeader.iChannelsInUse = br.ReadBytes(16);
+            if (iVer == 0x0100)
+            {
+                cmfHeader.iNumInstruments = br.ReadByte();
+                cmfHeader.iTempo = 0;
+            }
+            else
+            { // 0x0101
+                cmfHeader.iNumInstruments = br.ReadUInt16();
+                cmfHeader.iTempo = br.ReadUInt16();
+            }
+
+            // Load the instruments
+
+            stream.Seek(cmfHeader.iInstrumentBlockOffset, SeekOrigin.Begin);
+            pInstruments = new SBI[
+              (cmfHeader.iNumInstruments < 128) ? 128 : cmfHeader.iNumInstruments
+            ];  // Always at least 128 available for use
+
+            for (int i = 0; i < cmfHeader.iNumInstruments; i++)
+            {
+                pInstruments[i].op = new OPERATOR[2];
+                pInstruments[i].op[0].iCharMult = br.ReadByte();
+                pInstruments[i].op[1].iCharMult = br.ReadByte();
+                pInstruments[i].op[0].iScalingOutput = br.ReadByte();
+                pInstruments[i].op[1].iScalingOutput = br.ReadByte();
+                pInstruments[i].op[0].iAttackDecay = br.ReadByte();
+                pInstruments[i].op[1].iAttackDecay = br.ReadByte();
+                pInstruments[i].op[0].iSustainRelease = br.ReadByte();
+                pInstruments[i].op[1].iSustainRelease = br.ReadByte();
+                pInstruments[i].op[0].iWaveSel = br.ReadByte();
+                pInstruments[i].op[1].iWaveSel = br.ReadByte();
+                pInstruments[i].iConnection = br.ReadByte();
+                stream.Seek(5, SeekOrigin.Current);  // skip over the padding bytes
+            }
+
+            // Set the rest of the instruments to the CMF defaults
+            for (int i = cmfHeader.iNumInstruments; i < 128; i++)
+            {
+                pInstruments[i].op = new OPERATOR[2];
+                pInstruments[i].op[0].iCharMult = cDefaultPatches[(i % 16) * 11 + 0];
+                pInstruments[i].op[1].iCharMult = cDefaultPatches[(i % 16) * 11 + 1];
+                pInstruments[i].op[0].iScalingOutput = cDefaultPatches[(i % 16) * 11 + 2];
+                pInstruments[i].op[1].iScalingOutput = cDefaultPatches[(i % 16) * 11 + 3];
+                pInstruments[i].op[0].iAttackDecay = cDefaultPatches[(i % 16) * 11 + 4];
+                pInstruments[i].op[1].iAttackDecay = cDefaultPatches[(i % 16) * 11 + 5];
+                pInstruments[i].op[0].iSustainRelease = cDefaultPatches[(i % 16) * 11 + 6];
+                pInstruments[i].op[1].iSustainRelease = cDefaultPatches[(i % 16) * 11 + 7];
+                pInstruments[i].op[0].iWaveSel = cDefaultPatches[(i % 16) * 11 + 8];
+                pInstruments[i].op[1].iWaveSel = cDefaultPatches[(i % 16) * 11 + 9];
+                pInstruments[i].iConnection = cDefaultPatches[(i % 16) * 11 + 10];
+            }
+
+            if (cmfHeader.iTagOffsetTitle != 0)
+            {
+                stream.Seek(cmfHeader.iTagOffsetTitle, SeekOrigin.Begin);
+                strTitle = ReadString(br);
+            }
+            if (cmfHeader.iTagOffsetComposer != 0)
+            {
+                stream.Seek(cmfHeader.iTagOffsetComposer, SeekOrigin.Begin);
+                strComposer = ReadString(br);
+            }
+            if (cmfHeader.iTagOffsetRemarks != 0)
+            {
+                stream.Seek(cmfHeader.iTagOffsetRemarks, SeekOrigin.Begin);
+                strRemarks = ReadString(br);
+            }
+
+            // Load the MIDI data into memory
+            stream.Seek(cmfHeader.iMusicOffset, SeekOrigin.Begin);
+            iSongLen = (int)(stream.Length - cmfHeader.iMusicOffset);
+            data = br.ReadBytes(iSongLen);
+
+            Rewind(0);
+
+            return true;
         }
 
         public bool Update()

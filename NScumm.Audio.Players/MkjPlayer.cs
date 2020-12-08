@@ -54,7 +54,14 @@ namespace NScumm.Audio.Players
         public bool Load(string path)
         {
             using (var fs = File.OpenRead(path))
-            using (var br = new BinaryReader(fs))
+            {
+                return Load(fs);
+            }
+        }
+
+        public bool Load(Stream stream)
+        {
+            using (var br = new BinaryReader(stream))
             {
                 // file validation
                 var id = new string(br.ReadChars(6));

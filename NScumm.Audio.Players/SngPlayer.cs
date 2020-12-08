@@ -65,29 +65,34 @@ namespace NScumm.Audio.Players
         {
             using (var fs = File.OpenRead(path))
             {
-                var br = new BinaryReader(fs);
-
-                // load header
-                header.id = new string(br.ReadChars(4));
-                header.length = br.ReadUInt16(); header.start = br.ReadUInt16();
-                header.loop = br.ReadUInt16(); header.delay = br.ReadByte();
-                header.compressed = br.ReadByte() != 0;
-
-                // file validation section
-                if (!string.Equals(header.id, "ObsM", System.StringComparison.OrdinalIgnoreCase)) return false;
-
-                // load section
-                header.length /= 2; header.start /= 2; header.loop /= 2;
-                data = new Sdata[header.length];
-                for (var i = 0; i < header.length && fs.Position < fs.Length - 2; i++)
-                {
-                    data[i].val = br.ReadByte();
-                    data[i].reg = br.ReadByte();
-                }
-
-                Rewind(0);
-                return true;
+                return Load(fs);
             }
+        }
+
+        public bool Load(Stream fs)
+        {
+            var br = new BinaryReader(fs);
+
+            // load header
+            header.id = new string(br.ReadChars(4));
+            header.length = br.ReadUInt16(); header.start = br.ReadUInt16();
+            header.loop = br.ReadUInt16(); header.delay = br.ReadByte();
+            header.compressed = br.ReadByte() != 0;
+
+            // file validation section
+            if (!string.Equals(header.id, "ObsM", System.StringComparison.OrdinalIgnoreCase)) return false;
+
+            // load section
+            header.length /= 2; header.start /= 2; header.loop /= 2;
+            data = new Sdata[header.length];
+            for (var i = 0; i < header.length && fs.Position < fs.Length - 2; i++)
+            {
+                data[i].val = br.ReadByte();
+                data[i].reg = br.ReadByte();
+            }
+
+            Rewind(0);
+            return true;
         }
 
         public bool Update()

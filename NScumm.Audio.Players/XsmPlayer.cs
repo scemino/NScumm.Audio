@@ -57,30 +57,35 @@ namespace NScumm.Audio.Players
         {
             using (var fs = File.OpenRead(path))
             {
-                var br = new BinaryReader(fs);
-
-                // check if header matches
-                var id = new string(br.ReadChars(6)); songlen = br.ReadUInt16();
-                if (!string.Equals(id, "ofTAZ!", StringComparison.Ordinal) || songlen > 3200) return false;
-
-                // read and set instruments
-                for (var i = 0; i < 9; i++)
-                {
-                    inst[i] = new Instrument();
-                    inst[i].value = br.ReadBytes(11);
-                    fs.Seek(5, SeekOrigin.Current);
-                }
-
-                // read song data
-                music = new byte[songlen * 9];
-                for (var i = 0; i < 9; i++)
-                    for (var j = 0; j < songlen; j++)
-                        music[j * 9 + i] = br.ReadByte();
-
-                // success
-                Rewind(0);
-                return true;
+                return Load(fs);
             }
+        }
+
+        public bool Load(Stream stream)
+        {
+            var br = new BinaryReader(stream);
+
+            // check if header matches
+            var id = new string(br.ReadChars(6)); songlen = br.ReadUInt16();
+            if (!string.Equals(id, "ofTAZ!", StringComparison.Ordinal) || songlen > 3200) return false;
+
+            // read and set instruments
+            for (var i = 0; i < 9; i++)
+            {
+                inst[i] = new Instrument();
+                inst[i].value = br.ReadBytes(11);
+                stream.Seek(5, SeekOrigin.Current);
+            }
+
+            // read song data
+            music = new byte[songlen * 9];
+            for (var i = 0; i < 9; i++)
+                for (var j = 0; j < songlen; j++)
+                    music[j * 9 + i] = br.ReadByte();
+
+            // success
+            Rewind(0);
+            return true;
         }
 
         private void Rewind(int subsong)
@@ -118,7 +123,7 @@ namespace NScumm.Audio.Players
 
             for (var c = 0; c < 9; c++)
             {
-                if (music[notenum * 9 + c]!=0)
+                if (music[notenum * 9 + c] != 0)
                     PlayNote(c, music[notenum * 9 + c] % 12, music[notenum * 9 + c] / 12);
                 else
                     PlayNote(c, 0, 0);

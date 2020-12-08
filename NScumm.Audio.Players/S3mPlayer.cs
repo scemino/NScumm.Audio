@@ -112,101 +112,106 @@ namespace NScumm.Audio.Players
         {
             using (var fs = File.OpenRead(path))
             {
-                var br = new BinaryReader(fs);
-                var insptr = new ushort[99];
-                var pattptr = new ushort[99];
-                int row;
-                byte bufval, bufval2;
-                ushort ppatlen;
-                var adlibins = false;
-
-                // file validation section
-                var checkhead = LoadHeader(br);
-                if (checkhead.kennung != 0x1a || checkhead.typ != 16
-                   || checkhead.insnum > 99)
-                {
-                    return false;
-                }
-                if (checkhead.scrm != "SCRM")
-                {
-                    return false;
-                }
-                fs.Seek(checkhead.ordnum, SeekOrigin.Current);
-                for (var i = 0; i < checkhead.insnum; i++)
-                    insptr[i] = br.ReadUInt16();
-                for (var i = 0; i < checkhead.insnum; i++)
-                {
-                    fs.Seek(insptr[i] * 16, SeekOrigin.Begin);
-                    if (br.ReadByte() >= 2)
-                    {
-                        adlibins = true;
-                        break;
-                    }
-                }
-                if (!adlibins) return false;
-
-                // load section
-                fs.Seek(0, SeekOrigin.Begin); // rewind for load
-                _header = LoadHeader(br);     // read header
-
-                // security check
-                if (_header.ordnum > 256 || _header.insnum > 99 || _header.patnum > 99)
-                {
-                    return false;
-                }
-
-                for (var i = 0; i < _header.ordnum; i++) _orders[i] = br.ReadByte();    // read orders
-                for (var i = 0; i < _header.insnum; i++) insptr[i] = br.ReadUInt16();  // instrument parapointers
-                for (var i = 0; i < _header.patnum; i++) pattptr[i] = br.ReadUInt16(); // pattern parapointers
-
-                for (var i = 0; i < _header.insnum; i++)
-                {   // load instruments
-                    fs.Seek(insptr[i] * 16, SeekOrigin.Begin);
-                    _inst[i].type = br.ReadByte();
-                    _inst[i].filename = new string(br.ReadChars(15));
-                    _inst[i].d00 = br.ReadByte(); _inst[i].d01 = br.ReadByte();
-                    _inst[i].d02 = br.ReadByte(); _inst[i].d03 = br.ReadByte();
-                    _inst[i].d04 = br.ReadByte(); _inst[i].d05 = br.ReadByte();
-                    _inst[i].d06 = br.ReadByte(); _inst[i].d07 = br.ReadByte();
-                    _inst[i].d08 = br.ReadByte(); _inst[i].d09 = br.ReadByte();
-                    _inst[i].d0a = br.ReadByte(); _inst[i].d0b = br.ReadByte();
-                    _inst[i].volume = br.ReadByte(); _inst[i].dsk = br.ReadByte();
-                    fs.Seek(2, SeekOrigin.Current);
-                    _inst[i].c2spd = br.ReadUInt32();
-                    fs.Seek(12, SeekOrigin.Current);
-                    _inst[i].name = new string(br.ReadChars(28));
-                    _inst[i].scri = new string(br.ReadChars(4));
-                }
-
-                for (var i = 0; i < _header.patnum; i++)
-                {   // depack patterns
-                    fs.Seek(pattptr[i] * 16, SeekOrigin.Begin);
-                    ppatlen = br.ReadUInt16();
-                    long pattpos = fs.Position;
-                    for (row = 0; (row < 64) && (pattpos - pattptr[i] * 16 <= ppatlen); row++)
-                        do
-                        {
-                            bufval = br.ReadByte();
-                            if ((bufval & 32) != 0)
-                            {
-                                bufval2 = br.ReadByte();
-                                _pattern[i, row, bufval & 31].note = (byte)(bufval2 & 15);
-                                _pattern[i, row, bufval & 31].oct = (byte)((bufval2 & 240) >> 4);
-                                _pattern[i, row, bufval & 31].instrument = br.ReadByte();
-                            }
-                            if ((bufval & 64) != 0)
-                                _pattern[i, row, bufval & 31].volume = br.ReadByte();
-                            if ((bufval & 128) != 0)
-                            {
-                                _pattern[i, row, bufval & 31].command = br.ReadByte();
-                                _pattern[i, row, bufval & 31].info = br.ReadByte();
-                            }
-                        } while (bufval != 0);
-                }
-
-                Rewind(0);
-                return true;        // done
+                return Load(fs);
             }
+        }
+
+        public bool Load(Stream stream)
+        {
+            var br = new BinaryReader(stream);
+            var insptr = new ushort[99];
+            var pattptr = new ushort[99];
+            int row;
+            byte bufval, bufval2;
+            ushort ppatlen;
+            var adlibins = false;
+
+            // file validation section
+            var checkhead = LoadHeader(br);
+            if (checkhead.kennung != 0x1a || checkhead.typ != 16
+               || checkhead.insnum > 99)
+            {
+                return false;
+            }
+            if (checkhead.scrm != "SCRM")
+            {
+                return false;
+            }
+            stream.Seek(checkhead.ordnum, SeekOrigin.Current);
+            for (var i = 0; i < checkhead.insnum; i++)
+                insptr[i] = br.ReadUInt16();
+            for (var i = 0; i < checkhead.insnum; i++)
+            {
+                stream.Seek(insptr[i] * 16, SeekOrigin.Begin);
+                if (br.ReadByte() >= 2)
+                {
+                    adlibins = true;
+                    break;
+                }
+            }
+            if (!adlibins) return false;
+
+            // load section
+            stream.Seek(0, SeekOrigin.Begin); // rewind for load
+            _header = LoadHeader(br);     // read header
+
+            // security check
+            if (_header.ordnum > 256 || _header.insnum > 99 || _header.patnum > 99)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < _header.ordnum; i++) _orders[i] = br.ReadByte();    // read orders
+            for (var i = 0; i < _header.insnum; i++) insptr[i] = br.ReadUInt16();  // instrument parapointers
+            for (var i = 0; i < _header.patnum; i++) pattptr[i] = br.ReadUInt16(); // pattern parapointers
+
+            for (var i = 0; i < _header.insnum; i++)
+            {   // load instruments
+                stream.Seek(insptr[i] * 16, SeekOrigin.Begin);
+                _inst[i].type = br.ReadByte();
+                _inst[i].filename = new string(br.ReadChars(15));
+                _inst[i].d00 = br.ReadByte(); _inst[i].d01 = br.ReadByte();
+                _inst[i].d02 = br.ReadByte(); _inst[i].d03 = br.ReadByte();
+                _inst[i].d04 = br.ReadByte(); _inst[i].d05 = br.ReadByte();
+                _inst[i].d06 = br.ReadByte(); _inst[i].d07 = br.ReadByte();
+                _inst[i].d08 = br.ReadByte(); _inst[i].d09 = br.ReadByte();
+                _inst[i].d0a = br.ReadByte(); _inst[i].d0b = br.ReadByte();
+                _inst[i].volume = br.ReadByte(); _inst[i].dsk = br.ReadByte();
+                stream.Seek(2, SeekOrigin.Current);
+                _inst[i].c2spd = br.ReadUInt32();
+                stream.Seek(12, SeekOrigin.Current);
+                _inst[i].name = new string(br.ReadChars(28));
+                _inst[i].scri = new string(br.ReadChars(4));
+            }
+
+            for (var i = 0; i < _header.patnum; i++)
+            {   // depack patterns
+                stream.Seek(pattptr[i] * 16, SeekOrigin.Begin);
+                ppatlen = br.ReadUInt16();
+                long pattpos = stream.Position;
+                for (row = 0; (row < 64) && (pattpos - pattptr[i] * 16 <= ppatlen); row++)
+                    do
+                    {
+                        bufval = br.ReadByte();
+                        if ((bufval & 32) != 0)
+                        {
+                            bufval2 = br.ReadByte();
+                            _pattern[i, row, bufval & 31].note = (byte)(bufval2 & 15);
+                            _pattern[i, row, bufval & 31].oct = (byte)((bufval2 & 240) >> 4);
+                            _pattern[i, row, bufval & 31].instrument = br.ReadByte();
+                        }
+                        if ((bufval & 64) != 0)
+                            _pattern[i, row, bufval & 31].volume = br.ReadByte();
+                        if ((bufval & 128) != 0)
+                        {
+                            _pattern[i, row, bufval & 31].command = br.ReadByte();
+                            _pattern[i, row, bufval & 31].info = br.ReadByte();
+                        }
+                    } while (bufval != 0);
+            }
+
+            Rewind(0);
+            return true;        // done
         }
 
         public bool Update()

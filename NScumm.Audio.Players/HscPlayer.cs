@@ -71,47 +71,52 @@ namespace NScumm.Audio.Players
 
             using (var fs = File.OpenRead(path))
             {
-                if (fs.Length > (59187 + 1))  // +1 is for some files that have a trailing 0x00 on the end
-                    return false;
-                if (fs.Length < (1587 + 1152)) // no 0x00 byte here as this is the smallest possible size
-                    return false;
-
-                var br = new BinaryReader(fs);
-                int total_patterns_in_hsc = (int)((fs.Length - 1587) / 1152);
-
-                // load section
-                instr = new byte[128][];
-                for (var i = 0; i < 128; i++)    // load instruments
-                    instr[i] = br.ReadBytes(12);
-                for (var i = 0; i < 128; i++)
-                {     // correct instruments
-                    instr[i][2] = (byte)(instr[i][2] ^ (instr[i][2] & 0x40) << 1);
-                    instr[i][3] = (byte)(instr[i][3] ^ (instr[i][3] & 0x40) << 1);
-                    instr[i][11] >>= 4;     // slide
-                }
-                for (var i = 0; i < 51; i++)
-                { // load tracklist
-                    song[i] = br.ReadByte();
-                    // if out of range, song ends here
-                    if (
-                      ((song[i] & 0x7F) > 0x31)
-                      || ((song[i] & 0x7F) >= total_patterns_in_hsc)
-                    ) song[i] = 0xFF;
-                }
-                var len = (fs.Length - fs.Position)/2/64/9;
-                patterns = new hscnote[len, 64 * 9];
-                for (var i = 0; i < len; i++)
-                {     // load patterns
-                    for (var j = 0; j < 64 * 9; j++)
-                    {
-                        patterns[i, j].note = br.ReadByte();
-                        patterns[i, j].effect = br.ReadByte();
-                    }
-                }
-
-                Rewind(0);          // rewind module
-                return true;
+                return Load(fs);
             }
+        }
+
+        public bool Load(Stream stream)
+        {
+            if (stream.Length > (59187 + 1))  // +1 is for some files that have a trailing 0x00 on the end
+                return false;
+            if (stream.Length < (1587 + 1152)) // no 0x00 byte here as this is the smallest possible size
+                return false;
+
+            var br = new BinaryReader(stream);
+            int total_patterns_in_hsc = (int)((stream.Length - 1587) / 1152);
+
+            // load section
+            instr = new byte[128][];
+            for (var i = 0; i < 128; i++)    // load instruments
+                instr[i] = br.ReadBytes(12);
+            for (var i = 0; i < 128; i++)
+            {     // correct instruments
+                instr[i][2] = (byte)(instr[i][2] ^ (instr[i][2] & 0x40) << 1);
+                instr[i][3] = (byte)(instr[i][3] ^ (instr[i][3] & 0x40) << 1);
+                instr[i][11] >>= 4;     // slide
+            }
+            for (var i = 0; i < 51; i++)
+            { // load tracklist
+                song[i] = br.ReadByte();
+                // if out of range, song ends here
+                if (
+                  ((song[i] & 0x7F) > 0x31)
+                  || ((song[i] & 0x7F) >= total_patterns_in_hsc)
+                ) song[i] = 0xFF;
+            }
+            var len = (stream.Length - stream.Position) / 2 / 64 / 9;
+            patterns = new hscnote[len, 64 * 9];
+            for (var i = 0; i < len; i++)
+            {     // load patterns
+                for (var j = 0; j < 64 * 9; j++)
+                {
+                    patterns[i, j].note = br.ReadByte();
+                    patterns[i, j].effect = br.ReadByte();
+                }
+            }
+
+            Rewind(0);          // rewind module
+            return true;
         }
 
         public bool Update()
@@ -166,14 +171,14 @@ namespace NScumm.Audio.Players
                 switch (effect & 0xf0)
                 {     // effect handling
                     case 0:               // global effect
-                                          /* The following fx are unimplemented on purpose:
-                                           * 02 - Slide Mainvolume up
-                                           * 03 - Slide Mainvolume down (here: fade in)
-                                           * 04 - Set Mainvolume to 0
-                                           *
-                                           * This is because i've never seen any HSC modules using the fx this way.
-                                           * All modules use the fx the way, i've implemented it.
-                                           */
+                        /* The following fx are unimplemented on purpose:
+                         * 02 - Slide Mainvolume up
+                         * 03 - Slide Mainvolume down (here: fade in)
+                         * 04 - Set Mainvolume to 0
+                         *
+                         * This is because i've never seen any HSC modules using the fx this way.
+                         * All modules use the fx the way, i've implemented it.
+                         */
                         switch (eff_op)
                         {
                             case 1: pattbreak++; break; // jump to next pattern
