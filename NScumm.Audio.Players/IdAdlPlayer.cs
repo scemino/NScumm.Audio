@@ -48,6 +48,7 @@ namespace NScumm.Audio.Players
             try
             {
                 CurrentSound = new Adl(stream);
+                Opl.WriteReg(1, 32); // go to OPL2 mode
             }
             catch (Exception)
             {
