@@ -353,3 +353,4 @@ MigrationBackup/
 
 *.test
 .DS_Store
+NScumm.Audio.Player/Properties/launchSettings.json
