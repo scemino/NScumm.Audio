@@ -24,6 +24,7 @@ You will be able to download it soon.
 * IMF: Apogee IMF File Format
 * KSM: Ken Silverman's Music Format
 * LAA: LucasArts AdLib Audio File Format by LucasArts
+* LDS: Loudness Sound System by Loudness Multimedia
 * MID: MIDI Audio File Format
 * MKJ: MKJamz by M \ K Productions (preliminary)
 * S3M: Screamtracker 3 by Future Crew
