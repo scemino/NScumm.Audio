@@ -16,12 +16,13 @@ You will be able to download it soon.
 
 * A2M: AdLib Tracker 2 by subz3ro
 * ADL: Westwood ADL File Format
+* ADL: id Software Adlib sound effect format
 * BAM: Bob's Adlib Music Format
 * BMF: Easy AdLib 1.0 by The Brain
 * CMF: Creative Music File Format by Creative Technology
 * DRO: DOSBox Raw OPL Format
 * HSC: HSC Adlib Composer by Hannes Seifert, HSC-Tracker by Electronic Rats
-* IMF: Apogee IMF File Format
+* IMF: Id software Music File (also used by Apogee)
 * KSM: Ken Silverman's Music Format
 * LAA: LucasArts AdLib Audio File Format by LucasArts
 * LDS: Loudness Sound System by Loudness Multimedia
