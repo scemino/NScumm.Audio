@@ -34,14 +34,16 @@ namespace NScumm.Audio.AlPlayer
 
         private readonly IMusicPlayer _player;
         private readonly int _rate;
+        private readonly int _channels;
         private readonly IntPtr _device;
         private readonly IntPtr _context;
         private int minicnt;
 
-        public AlPlayer(IMusicPlayer player, int rate)
+        public AlPlayer(IMusicPlayer player, int rate, int channels)
         {
             _player = player;
             _rate = rate;
+            _channels = channels;
 
             _device = Alc.OpenDevice(null);
             _context = Alc.CreateContext(_device, null);
@@ -64,7 +66,7 @@ namespace NScumm.Audio.AlPlayer
         {
             int freq = _rate;
 
-            int i, towrite = DataChunckSize;
+            int i, towrite = DataChunckSize / _channels;
             var pos = 0;
 
             while (towrite > 0)
@@ -94,7 +96,8 @@ namespace NScumm.Audio.AlPlayer
             {
                 fixed (short* pData = data)
                 {
-                    Al.BufferData(id, Al.FormatMono16, pData, numSamples * 2, _rate);
+                    var format = _channels == 2 ? Al.FormatStereo16 : Al.FormatMono16; 
+                    Al.BufferData(id, format, pData, numSamples * 2, _rate);
                 }
             }
             return numSamples;

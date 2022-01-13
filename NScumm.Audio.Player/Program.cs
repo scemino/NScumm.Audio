@@ -29,6 +29,7 @@ namespace NScumm.Audio.AlPlayer
     class Program
     {
         private const int Rate = 44100;
+        private const bool UseStereo = false;
 
         static int Main(string[] args)
         {
@@ -38,7 +39,19 @@ namespace NScumm.Audio.AlPlayer
                 return -1;
             }
 
-            var opl = new WoodyEmulatorOpl(OplType.Opl3);
+            IOpl opl;
+
+            if (UseStereo)
+            {
+                var oplA = new WoodyEmulatorOpl(OplType.Opl3);
+                var oplB = new WoodyEmulatorOpl(OplType.Opl3);
+                opl = new SurroundOpl(oplA, oplB);
+            }
+            else
+            {
+                opl = new WoodyEmulatorOpl(OplType.Opl3);
+            }
+
             opl.Init(Rate);
 
             var players = Factory.GetPlayers(opl);
@@ -47,7 +60,7 @@ namespace NScumm.Audio.AlPlayer
                 if (!player.Load(args[0]))
                     continue;
 
-                var alPlayer = new AlPlayer(player, Rate);
+                var alPlayer = new AlPlayer(player, Rate, UseStereo ? 2 : 1);
                 alPlayer.Play();
 
                 Console.WriteLine("Hit a key to stop!");
