@@ -314,7 +314,7 @@ namespace NScumm.Audio.Players
                     --c.chancheat.chandelay;
                     if (c.chancheat.chandelay <= 0)
                     {
-                        playsound(c.chancheat.sound, chan, c.chancheat.high);
+                        PlaySound(c.chancheat.sound, chan, c.chancheat.high);
                     }
                 }
             }
@@ -469,7 +469,7 @@ namespace NScumm.Audio.Players
 
                                 if (chandelay[chan] <= 0)
                                 {
-                                    playsound(sound, chan, high);
+                                    PlaySound(sound, chan, high);
                                 }
                                 else
                                 {
@@ -535,7 +535,7 @@ namespace NScumm.Audio.Players
                 {
                     if (c.keycount == 1)
                     {
-                        setregs_adv((byte)(0xb0 + chan), 0xdf, 0);
+                        SetRegsAdv((byte)(0xb0 + chan), 0xdf, 0);
                     }
 
                     c.keycount--;
@@ -612,8 +612,8 @@ namespace NScumm.Audio.Players
 
                     freq = frequency[arpreg % (12 * 16)];
                     octave = (ushort)(arpreg / (12 * 16) - 1);
-                    setregs((byte)(0xa0 + chan), (byte)(freq & 0xff));
-                    setregs_adv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
+                    SetRegs((byte)(0xa0 + chan), (byte)(freq & 0xff));
+                    SetRegsAdv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
                 }
                 else
                 {
@@ -644,11 +644,11 @@ namespace NScumm.Audio.Players
 
                             freq = frequency[tune % (12 * 16)];
                             octave = (ushort)(tune / (12 * 16) - 1);
-                            setregs((byte)(0xa0 + chan), (byte)(freq & 0xff));
-                            setregs_adv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
+                            SetRegs((byte)(0xa0 + chan), (byte)(freq & 0xff));
+                            SetRegsAdv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
                             c.vibcount += c.vibspeed;
                         }
-                        else if (c.arp_size == 0)
+                        else if (c.arp_size != 0)
                         {
                             // no vibrato, just arpeggio
                             if (arpreg >= 0x800)
@@ -662,8 +662,8 @@ namespace NScumm.Audio.Players
 
                             freq = frequency[tune % (12 * 16)];
                             octave = (ushort)(tune / (12 * 16) - 1);
-                            setregs((byte)(0xa0 + chan), (byte)(freq & 0xff));
-                            setregs_adv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
+                            SetRegs((byte)(0xa0 + chan), (byte)(freq & 0xff));
+                            SetRegsAdv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
                         }
                     }
                     else
@@ -684,8 +684,8 @@ namespace NScumm.Audio.Players
 
                             freq = frequency[tune % (12 * 16)];
                             octave = (ushort)(tune / (12 * 16) - 1);
-                            setregs((byte)(0xa0 + chan), (byte)(freq & 0xff));
-                            setregs_adv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
+                            SetRegs((byte)(0xa0 + chan), (byte)(freq & 0xff));
+                            SetRegsAdv((byte)(0xb0 + chan), 0x20, (byte)(((octave << 2) + (freq >> 8)) & 0xdf));
                         }
                     }
                 }
@@ -707,22 +707,22 @@ namespace NScumm.Audio.Players
 
                         if (allvolume != 0 && (fmchip[0xc0 + chan] & 1) > 0)
                         {
-                            setregs_adv((byte) (0x40 + regnum), 0xc0, (byte) (((level * allvolume) >> 8) ^ 0x3f));
+                            SetRegsAdv((byte) (0x40 + regnum), 0xc0, (byte) (((level * allvolume) >> 8) ^ 0x3f));
                         }
                         else
                         {
-                            setregs_adv((byte) (0x40 + regnum), 0xc0, (byte) (level ^ 0x3f));
+                            SetRegsAdv((byte) (0x40 + regnum), 0xc0, (byte) (level ^ 0x3f));
                         }
 
                         c.trmcount += c.trmspeed;
                     }
                     else if (allvolume != 0 && (fmchip[0xc0 + chan] & 1) > 0)
                     {
-                        setregs_adv((byte) (0x40 + regnum), 0xc0, (byte) (((((c.volmod & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
+                        SetRegsAdv((byte) (0x40 + regnum), 0xc0, (byte) (((((c.volmod & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
                     }
                     else
                     {
-                        setregs_adv((byte) (0x40 + regnum), 0xc0, (byte) ((c.volmod ^ 0x3f) & 0x3f));
+                        SetRegsAdv((byte) (0x40 + regnum), 0xc0, (byte) ((c.volmod ^ 0x3f) & 0x3f));
                     }
                 }
                 else
@@ -730,7 +730,7 @@ namespace NScumm.Audio.Players
                     c.trmwait--;
                     if (allvolume != 0 && (fmchip[0xc0 + chan] & 1) > 0)
                     {
-                        setregs_adv((byte) (0x40 + regnum), 0xc0, (byte) (((((c.volmod & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
+                        SetRegsAdv((byte) (0x40 + regnum), 0xc0, (byte) (((((c.volmod & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
                     }
                 }
 
@@ -751,22 +751,22 @@ namespace NScumm.Audio.Players
 
                         if (allvolume != 0)
                         {
-                            setregs_adv((byte) (0x43 + regnum), 0xc0, (byte) (((level * allvolume) >> 8) ^ 0x3f));
+                            SetRegsAdv((byte) (0x43 + regnum), 0xc0, (byte) (((level * allvolume) >> 8) ^ 0x3f));
                         }
                         else
                         {
-                            setregs_adv((byte) (0x43 + regnum), 0xc0, (byte) (level ^ 0x3f));
+                            SetRegsAdv((byte) (0x43 + regnum), 0xc0, (byte) (level ^ 0x3f));
                         }
 
                         c.trccount += c.trcspeed;
                     }
                     else if (allvolume != 0)
                     {
-                        setregs_adv((byte) (0x43 + regnum), 0xc0, (byte) (((((c.volcar & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
+                        SetRegsAdv((byte) (0x43 + regnum), 0xc0, (byte) (((((c.volcar & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
                     }
                     else
                     {
-                        setregs_adv((byte) (0x43 + regnum), 0xc0, (byte) ((c.volcar ^ 0x3f) & 0x3f));
+                        SetRegsAdv((byte) (0x43 + regnum), 0xc0, (byte) ((c.volcar ^ 0x3f) & 0x3f));
                     }
                 }
                 else
@@ -774,7 +774,7 @@ namespace NScumm.Audio.Players
                     c.trcwait--;
                     if (allvolume != 0)
                     {
-                        setregs_adv((byte) (0x43 + regnum), 0xc0, (byte) (((((c.volcar & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
+                        SetRegsAdv((byte) (0x43 + regnum), 0xc0, (byte) (((((c.volcar & 0x3f) * allvolume) >> 8) ^ 0x3f) & 0x3f));
                     }
                 }
             }
@@ -782,7 +782,7 @@ namespace NScumm.Audio.Players
             return (!playing || songlooped) ? false : true;
         }
 
-        private void playsound(int inst_number, int channel_number, int tunehigh)
+        private void PlaySound(int inst_number, int channel_number, int tunehigh)
         {
             ref Channel c = ref channel[channel_number]; // current channel
             ref SoundBank sb = ref soundbank[inst_number]; // current instrument
@@ -817,7 +817,7 @@ namespace NScumm.Audio.Players
             }
 
             // set modulator registers
-            setregs((byte)(0x20 + regnum), sb.mod_misc);
+            SetRegs((byte)(0x20 + regnum), sb.mod_misc);
             volcalc = sb.mod_vol;
             if (c.nextvol <= 0 || (sb.feedback & 1) <= 0)
             {
@@ -830,19 +830,19 @@ namespace NScumm.Audio.Players
 
             if ((sb.feedback & 1) == 1 && allvolume != 0)
             {
-                setregs((byte) (0x40 + regnum), (byte)(((c.volmod & 0xc0) | (((c.volmod & 0x3f) * allvolume) >> 8)) ^ 0x3f));
+                SetRegs((byte) (0x40 + regnum), (byte)(((c.volmod & 0xc0) | (((c.volmod & 0x3f) * allvolume) >> 8)) ^ 0x3f));
             }
             else
             {
-                setregs((byte) (0x40 + regnum), (byte)(c.volmod ^ 0x3f));
+                SetRegs((byte) (0x40 + regnum), (byte)(c.volmod ^ 0x3f));
             }
 
-            setregs((byte)(0x60 + regnum), sb.mod_ad);
-            setregs((byte)(0x80 + regnum), sb.mod_sr);
-            setregs((byte)(0xe0 + regnum), sb.mod_wave);
+            SetRegs((byte)(0x60 + regnum), sb.mod_ad);
+            SetRegs((byte)(0x80 + regnum), sb.mod_sr);
+            SetRegs((byte)(0xe0 + regnum), sb.mod_wave);
 
             // Set carrier registers
-            setregs((byte)(0x23 + regnum), sb.car_misc);
+            SetRegs((byte)(0x23 + regnum), sb.car_misc);
             volcalc = sb.car_vol;
             if (c.nextvol <= 0)
             {
@@ -855,18 +855,18 @@ namespace NScumm.Audio.Players
 
             if (allvolume > 0)
             {
-                setregs((byte) (0x43 + regnum), (byte)(((c.volcar & 0xc0) | (((c.volcar & 0x3f) * allvolume) >> 8)) ^ 0x3f));
+                SetRegs((byte) (0x43 + regnum), (byte)(((c.volcar & 0xc0) | (((c.volcar & 0x3f) * allvolume) >> 8)) ^ 0x3f));
             }
             else
             {
-                setregs((byte) (0x43 + regnum), (byte)(c.volcar ^ 0x3f));
+                SetRegs((byte) (0x43 + regnum), (byte)(c.volcar ^ 0x3f));
             }
 
-            setregs((byte)(0x63 + regnum), sb.car_ad);
-            setregs((byte)(0x83 + regnum), sb.car_sr);
-            setregs((byte)(0xe3 + regnum), sb.car_wave);
-            setregs((byte)(0xc0 + channel_number), sb.feedback);
-            setregs_adv((byte)(0xb0 + channel_number), 0xdf, 0); // key off
+            SetRegs((byte)(0x63 + regnum), sb.car_ad);
+            SetRegs((byte)(0x83 + regnum), sb.car_sr);
+            SetRegs((byte)(0xe3 + regnum), sb.car_wave);
+            SetRegs((byte)(0xc0 + channel_number), sb.feedback);
+            SetRegsAdv((byte)(0xb0 + channel_number), 0xdf, 0); // key off
 
             var freq = frequency[tunehigh % (12 * 16)];
             var octave = (byte)(tunehigh / (12 * 16) - 1);
@@ -874,21 +874,21 @@ namespace NScumm.Audio.Players
             {
                 if (sb.portamento <= 0 || c.lasttune <= 0)
                 {
-                    setregs((byte)(0xa0 + channel_number), (byte)(freq & 0xff));
-                    setregs((byte)(0xb0 + channel_number), (byte)((octave << 2) + 0x20 + (freq >> 8)));
+                    SetRegs((byte)(0xa0 + channel_number), (byte)(freq & 0xff));
+                    SetRegs((byte)(0xb0 + channel_number), (byte)((octave << 2) + 0x20 + (freq >> 8)));
                     c.lasttune = c.gototune = (ushort)tunehigh;
                 }
                 else
                 {
                     c.gototune = (ushort)tunehigh;
                     c.portspeed = sb.portamento;
-                    setregs_adv((byte)(0xb0 + channel_number), 0xdf, 0x20); // key on
+                    SetRegsAdv((byte)(0xb0 + channel_number), 0xdf, 0x20); // key on
                 }
             }
             else
             {
-                setregs((byte)(0xa0 + channel_number), (byte)(freq & 0xff));
-                setregs((byte)(0xb0 + channel_number), (byte)((octave << 2) + 0x20 + (freq >> 8)));
+                SetRegs((byte)(0xa0 + channel_number), (byte)(freq & 0xff));
+                SetRegs((byte)(0xb0 + channel_number), (byte)((octave << 2) + 0x20 + (freq >> 8)));
                 c.lasttune = (ushort)tunehigh;
                 c.gototune = (ushort)(tunehigh + ((sb.glide + 0x80) & 0xff) - 0x80); // set destination
                 c.portspeed = sb.portamento;
@@ -936,7 +936,7 @@ namespace NScumm.Audio.Players
             c.nextvol = c.glideto = c.finetune = c.vibcount = c.arp_pos = c.arp_count = 0;
         }
         
-        private void setregs(byte reg, byte val)
+        private void SetRegs(byte reg, byte val)
         {
             if (fmchip[reg] == val)
             {
@@ -947,9 +947,9 @@ namespace NScumm.Audio.Players
             Opl.WriteReg(reg, val);
         }
 
-        private void setregs_adv(byte reg, byte mask, byte val)
+        private void SetRegsAdv(byte reg, byte mask, byte val)
         {
-            setregs(reg, (byte)((fmchip[reg] & mask) | val));
+            SetRegs(reg, (byte)((fmchip[reg] & mask) | val));
         }
     }
 }
