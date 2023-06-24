@@ -64,7 +64,7 @@ namespace NScumm.Audio.OPL.Woody
 
         // vibrato constants
         public const int VIBTAB_SIZE = 8;
-        public const double VIBFAC = 70 / 50000;        // no braces, integer mul/div
+        public const double VIBFAC = 70.0 / 50000.0;
 
         // tremolo constants and table
         public const int TREMTAB_SIZE = 53;
